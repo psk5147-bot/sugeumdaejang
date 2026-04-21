@@ -104,70 +104,56 @@
   .tax-option-cancel{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:14px;font-family:'Noto Sans KR',sans-serif;color:var(--text2);margin-top:4px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
-// JSONBin.io 방식 - 완전한 크로스 브라우저 동기화
-const JB_BIN = "69e721ff856a6821895766f0";
-const JB_KEY = "$2a$10$x9QIg8b/IKHS3bwEq2Ti/OAB/K53UFhImm3oMuoEfh4n8/eFER.mC";
-const JB_URL = "https://api.jsonbin.io/v3/b/" + JB_BIN;
+const _fbConfig = {
+  apiKey: "AIzaSyAxzmQDhFSu5sh7mgu37wdIzmwRt7ZnTi8",
+  authDomain: "sugeumdaejang.firebaseapp.com",
+  projectId: "sugeumdaejang",
+  storageBucket: "sugeumdaejang.firebasestorage.app",
+  messagingSenderId: "883862465831",
+  appId: "1:883862465831:web:ed0d835f01669ec4aecd02"
+};
+if (!firebase.apps.length) firebase.initializeApp(_fbConfig);
+const _db = firebase.firestore();
+const _DOC = _db.collection('soogeum').doc('2026');
 
 window.saveToCloud = async function(d) {
   try {
-    const res = await fetch(JB_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': JB_KEY,
-        'X-Bin-Versioning': 'false'
-      },
-      body: JSON.stringify({
-        misugeum: d.misugeum,
-        jigeum: d.jigeum,
-        updatedAt: new Date().toISOString()
-      })
+    await _DOC.set({
+      misugeum: JSON.stringify(d.misugeum),
+      jigeum: JSON.stringify(d.jigeum),
+      updatedAt: new Date().toISOString()
     });
-    if (res.ok) console.log('☁️ 저장완료');
-    else console.error('저장실패:', await res.text());
+    console.log('☁️ 저장완료');
   } catch(e) { console.error('저장실패:', e); }
 };
 
 window.loadFromCloud = async function() {
   try {
-    const res = await fetch(JB_URL + '/latest', {
-      headers: { 'X-Master-Key': JB_KEY }
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    const d = json.record;
-    if (d && (d.misugeum || d.jigeum)) {
+    const snap = await _DOC.get();
+    if (snap.exists) {
+      const d = snap.data();
       return {
-        misugeum: d.misugeum || [],
-        jigeum: d.jigeum || []
+        misugeum: JSON.parse(d.misugeum || '[]'),
+        jigeum: JSON.parse(d.jigeum || '[]')
       };
     }
   } catch(e) { console.error('로드실패:', e); }
   return null;
 };
 
-// 5초마다 동기화 체크
 window.startSync = function(cb) {
-  let lastUpdated = null;
-  setInterval(async () => {
-    try {
-      const res = await fetch(JB_URL + '/latest', {
-        headers: { 'X-Master-Key': JB_KEY }
+  _DOC.onSnapshot((snap) => {
+    if (snap.exists) {
+      const d = snap.data();
+      cb({
+        misugeum: JSON.parse(d.misugeum || '[]'),
+        jigeum: JSON.parse(d.jigeum || '[]')
       });
-      if (!res.ok) return;
-      const json = await res.json();
-      const d = json.record;
-      if (d && d.updatedAt && d.updatedAt !== lastUpdated) {
-        lastUpdated = d.updatedAt;
-        cb({
-          misugeum: d.misugeum || [],
-          jigeum: d.jigeum || []
-        });
-      }
-    } catch(e) {}
-  }, 5000);
+    }
+  });
 };
 </script>
 </head>
@@ -594,7 +580,9 @@ function setFilter(f) {
 function render() {
   const items = [...data[tab]].sort((a,b) => {
     const toNum = d => { const [m,day] = (d||'0/0').split('/'); return parseInt(m)*100+parseInt(day); };
-    return toNum(a.date) - toNum(b.date);
+    const dateDiff = toNum(b.date) - toNum(a.date);
+    if (dateDiff !== 0) return dateDiff;
+    return (b.id || 0) - (a.id || 0);
   });
   const filtered = items.filter(it => {
     if (filter === 'all') return true;
