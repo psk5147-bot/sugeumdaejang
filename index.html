@@ -190,7 +190,6 @@ window.startSync = function(cb) {
   </div>
   <div class="list-wrap">
     <input class="search-box" type="text" id="searchBox" placeholder="🔍 업체명, 내용 검색..." oninput="render()">
-    <div class="month-filter" id="monthFilter"></div>
     <input class="search-box" type="text" id="searchBox" placeholder="🔍 업체명, 내용 검색..." oninput="render()">
     <div class="month-filter-row" id="monthFilterRow"></div>
     <div class="filter-row">
@@ -590,7 +589,7 @@ function setTab(t) {
   document.querySelectorAll('.tab').forEach(el => {
     el.classList.toggle('active', el.classList.contains(t));
   });
-  monthFilter = 'all';
+  monthSel = 'all';
   if (document.getElementById('searchBox')) document.getElementById('searchBox').value = '';
   render();
 }
@@ -612,14 +611,7 @@ function render() {
   });
   // 월별 필터 버튼 생성
   const months = [...new Set(items.map(it => (it.date||'').slice(0,4+1+2)).filter(m => m.length >= 4))].sort();
-  const mfEl = document.getElementById('monthFilter');
-  if (mfEl) {
-    mfEl.innerHTML = '<button class="month-btn' + (monthFilter==='all'?' active':'') + '" onclick="setMonthFilter(\'all\')">전체</button>' +
-      months.map(m => {
-        const label = m.replace('-', '/').slice(2);
-        return '<button class="month-btn' + (monthFilter===m?' active':'') + '" onclick="setMonthFilter(\'' + m + '\')">'+label+'</button>';
-      }).join('');
-  }
+
 
   const searchQ = (document.getElementById('searchBox')?.value || '').toLowerCase();
 
@@ -627,7 +619,7 @@ function render() {
     if (filter === 'done' && !it.done) return false;
     if (filter === 'pending' && it.done) return false;
     if (filter === 'taxpending' && it.tax !== 'pending') return false;
-    if (monthFilter !== 'all' && !(it.date||'').startsWith(monthFilter)) return false;
+    if (monthSel !== 'all' && !(it.date||'').startsWith(monthSel)) return false;
     if (searchQ && !(it.desc||'').toLowerCase().includes(searchQ)) return false;
     return true;
   });
