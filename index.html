@@ -39,6 +39,11 @@
   .filter-btn.active{background:var(--bg3);color:var(--text);border-color:#555}
   .search-box{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg3);color:var(--text);font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;margin-bottom:8px}
   .search-box:focus{border-color:#555}
+  .month-filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .month-btn{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:11px;color:var(--text2);font-family:'Noto Sans KR',sans-serif;transition:all 0.15s}
+  .month-btn.active{background:var(--bg3);color:var(--text);border-color:#555}
+  .search-box{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg3);color:var(--text);font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;margin-bottom:8px}
+  .search-box:focus{border-color:#555}
   .month-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
   .month-btn{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:11px;color:var(--text2);font-family:'Noto Sans KR',sans-serif;transition:all 0.15s}
   .month-btn.active{background:var(--bg3);color:var(--text);border-color:#555}
@@ -186,6 +191,8 @@ window.startSync = function(cb) {
   <div class="list-wrap">
     <input class="search-box" type="text" id="searchBox" placeholder="🔍 업체명, 내용 검색..." oninput="render()">
     <div class="month-filter" id="monthFilter"></div>
+    <input class="search-box" type="text" id="searchBox" placeholder="🔍 업체명, 내용 검색..." oninput="render()">
+    <div class="month-filter-row" id="monthFilterRow"></div>
     <div class="filter-row">
       <button class="filter-btn active" onclick="setFilter('all')">전체</button>
       <button class="filter-btn" onclick="setFilter('pending')">미완료</button>
@@ -570,6 +577,11 @@ function formatAmtInput(el) {
 
 function setMonthFilter(m) {
   monthFilter = m;
+  render();
+}
+
+function setMonthSel(m) {
+  monthSel = m;
   render();
 }
 
