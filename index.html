@@ -37,6 +37,11 @@
   .filter-row{display:flex;gap:6px;margin-bottom:10px}
   .filter-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:12px;color:var(--text2);font-family:'Noto Sans KR',sans-serif;transition:all 0.15s}
   .filter-btn.active{background:var(--bg3);color:var(--text);border-color:#555}
+  .search-box{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg3);color:var(--text);font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;margin-bottom:8px}
+  .search-box:focus{border-color:#555}
+  .month-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .month-btn{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:11px;color:var(--text2);font-family:'Noto Sans KR',sans-serif;transition:all 0.15s}
+  .month-btn.active{background:var(--bg3);color:var(--text);border-color:#555}
   .list{display:flex;flex-direction:column;gap:6px}
   .item{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#ffffff;border:1px solid var(--border);border-radius:12px;transition:opacity 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
   .item.done{opacity:0.4}
@@ -179,6 +184,8 @@ window.startSync = function(cb) {
     <div class="stat"><div class="stat-label">미완료 금액</div><div class="stat-val" id="pendingAmt">0원</div></div>
   </div>
   <div class="list-wrap">
+    <input class="search-box" type="text" id="searchBox" placeholder="🔍 업체명, 내용 검색..." oninput="render()">
+    <div class="month-filter" id="monthFilter"></div>
     <div class="filter-row">
       <button class="filter-btn active" onclick="setFilter('all')">전체</button>
       <button class="filter-btn" onclick="setFilter('pending')">미완료</button>
@@ -287,7 +294,7 @@ const PRESET_MIS = [
   {desc:"남양공업 브레이크라이닝 1세트",amt:181500,date:"4/20",done:true,tax:"issued"},
 ];
 
-let tab = 'misugeum', filter = 'all';
+let tab = 'misugeum', filter = 'all', monthFilter = 'all';
 
 const PRESET = [
   {desc:"동아지게차 nsm-t 출고도비",amt:100000,date:"1/5",done:true,tax:"issued"},
@@ -561,11 +568,18 @@ function formatAmtInput(el) {
   else el.value = '';
 }
 
+function setMonthFilter(m) {
+  monthFilter = m;
+  render();
+}
+
 function setTab(t) {
   tab = t;
   document.querySelectorAll('.tab').forEach(el => {
     el.classList.toggle('active', el.classList.contains(t));
   });
+  monthFilter = 'all';
+  if (document.getElementById('searchBox')) document.getElementById('searchBox').value = '';
   render();
 }
 
@@ -584,11 +598,25 @@ function render() {
     if (dateDiff !== 0) return dateDiff;
     return (b.id || 0) - (a.id || 0);
   });
+  // 월별 필터 버튼 생성
+  const months = [...new Set(items.map(it => (it.date||'').slice(0,4+1+2)).filter(m => m.length >= 4))].sort();
+  const mfEl = document.getElementById('monthFilter');
+  if (mfEl) {
+    mfEl.innerHTML = '<button class="month-btn' + (monthFilter==='all'?' active':'') + '" onclick="setMonthFilter('all')">전체</button>' +
+      months.map(m => {
+        const label = m.replace('-', '/').slice(2);
+        return '<button class="month-btn' + (monthFilter===m?' active':'') + '" onclick="setMonthFilter('' + m + '')">' + label + '</button>';
+      }).join('');
+  }
+
+  const searchQ = (document.getElementById('searchBox')?.value || '').toLowerCase();
+
   const filtered = items.filter(it => {
-    if (filter === 'all') return true;
-    if (filter === 'done') return it.done;
-    if (filter === 'pending') return !it.done;
-    if (filter === 'taxpending') return it.tax === 'pending';
+    if (filter === 'done' && !it.done) return false;
+    if (filter === 'pending' && it.done) return false;
+    if (filter === 'taxpending' && it.tax !== 'pending') return false;
+    if (monthFilter !== 'all' && !(it.date||'').startsWith(monthFilter)) return false;
+    if (searchQ && !(it.desc||'').toLowerCase().includes(searchQ)) return false;
     return true;
   });
   const total = items.reduce((s, it) => s + Number(it.amt), 0);
