@@ -608,9 +608,26 @@ function render() {
     if (dateDiff !== 0) return dateDiff;
     return (b.id || 0) - (a.id || 0);
   });
-  // 월별 필터 버튼 생성
-  const months = [...new Set(items.map(it => (it.date||'').slice(0,4+1+2)).filter(m => m.length >= 4))].sort();
-
+  // 월별 필터 버튼 생성 - M/D 형식 지원
+  const getMonth = (date) => {
+    if (!date) return null;
+    if (date.includes('-')) return date.slice(0,7); // YYYY-MM
+    const parts = date.split('/');
+    if (parts.length >= 1) return parts[0].padStart(2,'0') + '월'; // M -> MM월
+    return null;
+  };
+  const monthKeys = [...new Set(items.map(it => getMonth(it.date)).filter(Boolean))].sort((a,b) => {
+    const na = parseInt(a); const nb = parseInt(b); return na - nb;
+  });
+  const mfRow = document.getElementById('monthFilterRow');
+  if (mfRow) {
+    const allBtn = '<button class="month-btn'+(monthSel==='all'?' active':'')+'" onclick="setMonthSel(\'all\')">전체</button>';
+    const monthBtns = monthKeys.map(m => {
+      const active = monthSel===m?' active':'';
+      return '<button class="month-btn'+active+'" onclick="setMonthSel(\''+m+'\')">'+m+'</button>';
+    }).join('');
+    mfRow.innerHTML = allBtn + monthBtns;
+  }
 
   const searchQ = (document.getElementById('searchBox')?.value || '').toLowerCase();
 
@@ -618,7 +635,10 @@ function render() {
     if (filter === 'done' && !it.done) return false;
     if (filter === 'pending' && it.done) return false;
     if (filter === 'taxpending' && it.tax !== 'pending') return false;
-    if (monthSel !== 'all' && !(it.date||'').startsWith(monthSel)) return false;
+    if (monthSel !== 'all') {
+      const itMonth = getMonth(it.date);
+      if (itMonth !== monthSel) return false;
+    }
     if (searchQ && !(it.desc||'').toLowerCase().includes(searchQ)) return false;
     return true;
   });
