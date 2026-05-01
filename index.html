@@ -301,7 +301,7 @@ const PRESET_MIS = [
   {desc:"남양공업 브레이크라이닝 1세트",amt:181500,date:"4/20",done:true,tax:"issued"},
 ];
 
-let tab = 'misugeum', filter = 'all', monthFilter = 'all';
+let tab = 'misugeum', filter = 'all', monthFilter = 'all', monthSel = 'all';
 
 const PRESET = [
   {desc:"동아지게차 nsm-t 출고도비",amt:100000,date:"1/5",done:true,tax:"issued"},
@@ -614,10 +614,10 @@ function render() {
   const months = [...new Set(items.map(it => (it.date||'').slice(0,4+1+2)).filter(m => m.length >= 4))].sort();
   const mfEl = document.getElementById('monthFilter');
   if (mfEl) {
-    mfEl.innerHTML = '<button class="month-btn' + (monthFilter==='all'?' active':'') + '" onclick="setMonthFilter('all')">전체</button>' +
+    mfEl.innerHTML = '<button class="month-btn' + (monthFilter==='all'?' active':'') + '" onclick="setMonthFilter(\'all\')">전체</button>' +
       months.map(m => {
         const label = m.replace('-', '/').slice(2);
-        return '<button class="month-btn' + (monthFilter===m?' active':'') + '" onclick="setMonthFilter('' + m + '')">' + label + '</button>';
+        return '<button class="month-btn' + (monthFilter===m?' active':'') + '" onclick="setMonthFilter(\'' + m + '\')">'+label+'</button>';
       }).join('');
   }
 
