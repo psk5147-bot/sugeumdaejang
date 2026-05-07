@@ -9,8 +9,6 @@
 <meta name="theme-color" content="#0f0f0f">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon.png">
-<link rel="apple-touch-icon-precomposed" href="icon.png">
 <title>수금대장</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
@@ -82,7 +80,7 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .tab.suyik{color:var(--text2)}
   .tab.active.suyik{background:#ebebff;color:#5555dd;border-color:#5555dd}
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;flex-direction:column;overflow-y:auto;padding:env(safe-area-inset-top,20px) 0 env(safe-area-inset-bottom,20px)}
+  .modal-overlay{position:fixed;inset:0;background:#f5f5f5;z-index:100;display:flex;flex-direction:column;overflow-y:auto;padding:env(safe-area-inset-top,20px) 0 env(safe-area-inset-bottom,20px)}
   .modal-overlay.hidden{display:none}
   .modal{background:#f5f5f5;margin:auto;width:100%;max-width:480px;padding:20px;min-height:100vh}
   .modal-title{font-size:18px;font-weight:700;margin-bottom:16px;letter-spacing:-0.5px}
@@ -106,6 +104,14 @@
   .archive-item-val{font-size:15px;font-weight:700;margin-top:2px}
   .back-btn{display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--text2);font-size:14px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;padding:0 0 16px 0}
   .tax-popup{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+  .edit-popup{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:center;justify-content:center}
+  .edit-popup.hidden{display:none}
+  .edit-popup-inner{background:#fff;width:90%;max-width:400px;border-radius:16px;padding:20px}
+  .edit-popup-title{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--text)}
+  .edit-inp{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;margin-bottom:10px;color:var(--text)}
+  .edit-btns{display:flex;gap:8px}
+  .edit-btn-ok{flex:1;padding:10px;background:var(--accent);border:none;border-radius:10px;color:#0f0f0f;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+  .edit-btn-cancel{flex:1;padding:10px;background:var(--bg3);border:none;border-radius:10px;color:var(--text2);font-size:14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
   .tax-popup.hidden{display:none}
   .tax-popup-inner{background:#ffffff;width:100%;max-width:480px;border-radius:16px 16px 0 0;padding:20px;padding-bottom:max(20px,env(safe-area-inset-bottom))}
   .tax-popup-title{font-size:14px;color:var(--text2);margin-bottom:14px;text-align:center}
@@ -210,6 +216,16 @@ window.startSync = function(cb) {
       <input class="inp inp-date" type="text" id="inpDate" placeholder="날짜">
       <button id="taxToggleBtn" class="tax-badge unissued" onclick="toggleTaxInput()" style="padding:10px 10px;font-size:11px">계산서선택</button>
       <button class="btn-add" onclick="addItem()">추가</button>
+    </div>
+  </div>
+</div>
+<div class="edit-popup hidden" id="editPopup">
+  <div class="edit-popup-inner">
+    <div class="edit-popup-title">내용 수정</div>
+    <input class="edit-inp" type="text" id="editDescInp" placeholder="내용 입력">
+    <div class="edit-btns">
+      <button class="edit-btn-cancel" onclick="closeEditPopup()">취소</button>
+      <button class="edit-btn-ok" onclick="confirmEdit()">수정</button>
     </div>
   </div>
 </div>
@@ -660,7 +676,7 @@ function render() {
     return `<div class="item${it.done?' done':''}">
       <div class="check${it.done?' checked '+ck:''}" onclick="toggle(${ri})"></div>
       <div class="item-body">
-        <div class="item-desc">${it.desc}</div>
+        <div class="item-desc" onclick="editDesc(${ri})" style="cursor:pointer">${it.desc}</div>
         <div class="item-meta">
           ${it.date?`<span class="item-date">${it.date}</span>`:''}
           <span class="item-amt ${cl}">${fmt(it.amt)}</span>
@@ -726,6 +742,29 @@ function selectTax(val) {
     btn.style.fontSize = '11px';
   }
   closeTaxPopup();
+}
+
+let editingIdx = null;
+function editDesc(i) {
+  const pw = prompt('수정 비밀번호:');
+  if (pw === null) return;
+  if (pw !== '5143') { toast('비밀번호가 틀렸어요'); return; }
+  editingIdx = i;
+  document.getElementById('editDescInp').value = data[tab][i].desc || '';
+  document.getElementById('editPopup').classList.remove('hidden');
+}
+function closeEditPopup() {
+  editingIdx = null;
+  document.getElementById('editPopup').classList.add('hidden');
+}
+function confirmEdit() {
+  if (editingIdx === null) return;
+  const newDesc = document.getElementById('editDescInp').value.trim();
+  if (!newDesc) { toast('내용을 입력해주세요'); return; }
+  data[tab][editingIdx].desc = newDesc;
+  save(); render();
+  closeEditPopup();
+  toast('수정됐어요!');
 }
 
 function toggle(i) {
