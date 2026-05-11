@@ -206,6 +206,7 @@ window.startSync = function(cb) {
         <div class="header-date" id="todayDate"></div>
         <button onclick="exportBackup()" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:11px;padding:4px 8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif">백업</button>
         <label style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:11px;padding:4px 8px;cursor:pointer">복원<input type="file" accept=".json" onchange="importBackup(event)" style="display:none"></label>
+        <button onclick="logout()" style="background:none;border:1px solid #e0e0e0;border-radius:8px;color:#999;font-size:11px;padding:4px 8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif">로그아웃</button>
       </div>
     </div>
     <div class="tabs" style="padding:12px 0 0">
@@ -994,6 +995,16 @@ if ('serviceWorker' in navigator) {
 
 const PW_KEY = 'soogeum_auth';
 const CORRECT_PW = 'moonh5143862#';
+
+function logout() {
+  if (!confirm('로그아웃 하시겠어요?')) return;
+  localStorage.removeItem(PW_KEY);
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('lockScreen').classList.remove('hidden');
+  document.getElementById('lockInp').value = '';
+  document.getElementById('lockErr').textContent = '';
+  document.getElementById('lockInp').focus();
+}
 
 function checkPw() {
   const pw = document.getElementById('lockInp').value;
