@@ -991,6 +991,36 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });
 }
+
+const PW_KEY = 'soogeum_auth';
+const CORRECT_PW = 'moonh5143862#';
+
+function checkPw() {
+  const pw = document.getElementById('lockInp').value;
+  if (pw === CORRECT_PW) {
+    localStorage.setItem(PW_KEY, btoa(CORRECT_PW));
+    document.getElementById('lockScreen').classList.add('hidden');
+    document.getElementById('mainApp').style.display = 'flex';
+    load();
+  } else {
+    document.getElementById('lockErr').textContent = '비밀번호가 틀렸어요 ❌';
+    document.getElementById('lockInp').value = '';
+    document.getElementById('lockInp').focus();
+  }
+}
+
+function initAuth() {
+  const saved = localStorage.getItem(PW_KEY);
+  if (saved && saved === btoa(CORRECT_PW)) {
+    document.getElementById('lockScreen').classList.add('hidden');
+    document.getElementById('mainApp').style.display = 'flex';
+    load();
+  } else {
+    document.getElementById('lockInp').focus();
+  }
+}
+
+initAuth();
 </script>
 </body>
 </html>
