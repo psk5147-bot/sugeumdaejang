@@ -176,6 +176,13 @@ window.startSync = function(cb) {
 </script>
 </head>
 <body>
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-title">🔐 수금대장</div>
+  <div class="lock-sub">비밀번호를 입력하세요</div>
+  <input class="lock-inp" type="password" id="lockInp" placeholder="비밀번호" onkeydown="if(event.key==='Enter')checkPw()">
+  <button class="lock-btn" onclick="checkPw()">확인</button>
+  <div class="lock-err" id="lockErr"></div>
+</div>
 <div class="app">
   <div class="header">
     <div class="header-inner">
