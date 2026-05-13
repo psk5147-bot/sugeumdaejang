@@ -132,6 +132,24 @@
   .lock-btn{width:100%;padding:13px;background:#2563eb;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
   .lock-btn:active{opacity:0.9}
   .lock-err{font-size:12px;color:#dc2626;margin-top:8px;min-height:18px;text-align:center}
+
+  .split-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:#fff3cd;color:#856404;border:1px solid #ffc107;white-space:nowrap}
+  .split-detail{background:#f8f9fa;border-radius:8px;padding:8px 10px;margin-top:6px;font-size:12px}
+  .split-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #eee}
+  .split-row:last-child{border-bottom:none}
+  .split-row-label{color:#666}
+  .split-row-amt{font-weight:600;color:#1a8a4a}
+  .split-remain{display:flex;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid #ddd;font-weight:700;font-size:13px}
+  .split-add-btn{width:100%;margin-top:6px;padding:6px;background:#fff;border:1px dashed #ccc;border-radius:8px;cursor:pointer;font-size:12px;color:#666;font-family:'Noto Sans KR',sans-serif}
+  .split-modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:flex;align-items:center;justify-content:center}
+  .split-modal.hidden{display:none}
+  .split-modal-inner{background:#fff;border-radius:16px;padding:20px;width:90%;max-width:360px}
+  .split-modal-title{font-size:15px;font-weight:700;margin-bottom:14px;color:#1a1a1a}
+  .split-inp{width:100%;padding:10px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;margin-bottom:8px}
+  .split-inp:focus{border-color:#2563eb}
+  .split-btns{display:flex;gap:8px;margin-top:4px}
+  .split-btn-ok{flex:1;padding:10px;background:#2563eb;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+  .split-btn-cancel{flex:1;padding:10px;background:#f0f0f0;border:none;border-radius:8px;color:#666;font-size:14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -252,6 +270,7 @@ window.startSync = function(cb) {
     </div>
   </div>
 </div>
+<div class="split-modal hidden" id="splitModal"><div class="split-modal-inner"><div class="split-modal-title">입금 추가</div><input class="split-inp" type="text" id="splitDescInp" placeholder="내용 (예: 계약금, 중도금, 잔금)"><input class="split-inp" type="text" inputmode="numeric" id="splitAmtInp" placeholder="금액" oninput="fmtAmt(this)"><input class="split-inp" type="text" id="splitDateInp" placeholder="날짜 (예: 5/13)"><div class="split-btns"><button class="split-btn-cancel" onclick="closeSplitModal()">취소</button><button class="split-btn-ok" onclick="confirmSplit()">추가</button></div></div></div>
 <div class="toast" id="toast"></div>
 <div class="tax-popup hidden" id="taxPopup">
   <div class="tax-popup-inner">
@@ -696,18 +715,10 @@ function render() {
   el.innerHTML = filtered.map(it => {
     const ri = data[tab].findIndex(x => x.id === it.id);
     const taxInfo = taxMap[it.tax] || taxMap['pending'];
-    return `<div class="item${it.done?' done':''}">
-      <div class="check${it.done?' checked '+ck:''}" onclick="toggle(${ri})"></div>
-      <div class="item-body">
-        <div class="item-desc" onclick="editDesc(${ri})" style="cursor:pointer">${it.desc}</div>
-        <div class="item-meta">
-          ${it.date?`<span class="item-date">${it.date}</span>`:''}
-          <span class="item-amt ${cl}">${fmt(it.amt)}</span>
-          <button class="tax-badge ${taxInfo.cls}" onclick="toggleTax(${ri})">${taxInfo.lbl}</button>
-        </div>
-      </div>
-      <button class="item-del" onclick="del(${ri})">×</button>
-    </div>`;
+    const paidAmt = it.splits ? it.splits.reduce((s,sp)=>s+Number(sp.amt),0) : 0;
+    const remainAmt = it.amt - paidAmt;
+    const splitHtml = it.isSplit ? `<div class="split-detail">${(it.splits||[]).map(sp=>`<div class="split-row"><span class="split-row-label">${sp.desc}${sp.date?' ('+sp.date+')':''}</span><span class="split-row-amt">${fmt(sp.amt)}</span></div>`).join('')}<div class="split-remain"><span>잔여금액</span><span style="color:${remainAmt<=0?'#1a8a4a':'#d63030'}">${remainAmt<=0?'✅ 완납':fmt(remainAmt)}</span></div><button class="split-add-btn" onclick="openSplitModal(${ri})">+ 입금 추가</button></div>` : '';
+    return `<div class="item${it.done?' done':''}"><div class="check${it.done?' checked '+ck:''}" onclick="toggle(${ri})"></div><div class="item-body"><div class="item-desc" onclick="editDesc(${ri})" style="cursor:pointer">${it.desc}</div><div class="item-meta">${it.date?`<span class="item-date">${it.date}</span>`:''}<span class="item-amt ${cl}">${fmt(it.amt)}</span>${it.isSplit?'<span class="split-badge">분할</span>':''}<button class="tax-badge ${taxInfo.cls}" onclick="toggleTax(${ri})">${taxInfo.lbl}</button></div>${splitHtml}</div><div style="display:flex;flex-direction:column;gap:4px;align-items:center;flex-shrink:0"><button class="item-del" onclick="editAmt(${ri})" title="금액수정">✏️</button><button class="item-del" onclick="del(${ri})">×</button></div></div>`;
   }).join('');
 }
 
@@ -716,7 +727,7 @@ function addItem() {
   const amt = document.getElementById('inpAmt').value.replace(/,/g, '').trim();
   const date = document.getElementById('inpDate').value.trim();
   if (!desc || !amt) { toast('내용과 금액을 입력해주세요'); return; }
-  data[tab].unshift({ desc, amt: Number(amt), date, done: false, tax: taxState, id: Date.now() });
+  data[tab].unshift({ desc, amt: Number(amt), date, done: false, tax: taxState, isSplit: splitMode, splits: [], id: Date.now() });
   save(); render();
   document.getElementById('inpDesc').value = '';
   document.getElementById('inpAmt').value = '';
@@ -767,6 +778,51 @@ function selectTax(val) {
   closeTaxPopup();
 }
 
+let splitMode = false;
+function toggleSplitMode() {
+  splitMode = !splitMode;
+  const btn = document.getElementById('splitToggleBtn');
+  if (splitMode) { btn.style.background='#fff3cd'; btn.style.color='#856404'; btn.textContent='분할✓'; }
+  else { btn.style.background=''; btn.style.color=''; btn.textContent='분할'; }
+}
+let splitTargetIdx = null;
+function openSplitModal(i) {
+  splitTargetIdx = i;
+  document.getElementById('splitDescInp').value = '';
+  document.getElementById('splitAmtInp').value = '';
+  const d = new Date();
+  document.getElementById('splitDateInp').value = (d.getMonth()+1)+'/'+d.getDate();
+  document.getElementById('splitModal').classList.remove('hidden');
+}
+function closeSplitModal() {
+  splitTargetIdx = null;
+  document.getElementById('splitModal').classList.add('hidden');
+}
+function confirmSplit() {
+  if (splitTargetIdx === null) return;
+  const desc = document.getElementById('splitDescInp').value.trim() || '입금';
+  const amt = Number(document.getElementById('splitAmtInp').value.replace(/,/g,''));
+  const date = document.getElementById('splitDateInp').value.trim();
+  if (!amt) { toast('금액을 입력해주세요'); return; }
+  if (!data[tab][splitTargetIdx].splits) data[tab][splitTargetIdx].splits = [];
+  data[tab][splitTargetIdx].splits.push({ desc, amt, date, id: Date.now() });
+  const total = data[tab][splitTargetIdx].amt;
+  const paid = data[tab][splitTargetIdx].splits.reduce((s,sp)=>s+Number(sp.amt),0);
+  if (paid >= total) data[tab][splitTargetIdx].done = true;
+  save(); render(); closeSplitModal(); toast('입금 추가됐어요!');
+}
+function editAmt(i) {
+  const pw = prompt('수정 비밀번호:');
+  if (pw === null) return;
+  if (pw !== '5143') { toast('비밀번호가 틀렸어요'); return; }
+  const cur = data[tab][i].amt;
+  const newVal = prompt('새 금액 입력\n현재: ' + cur.toLocaleString('ko-KR') + '원');
+  if (!newVal) return;
+  const newAmt = Number(newVal.replace(/,/g,''));
+  if (isNaN(newAmt) || newAmt <= 0) { toast('올바른 금액을 입력해주세요'); return; }
+  data[tab][i].amt = newAmt;
+  save(); render(); toast('금액이 수정됐어요!');
+}
 let editingIdx = null;
 function editDesc(i) {
   const pw = prompt('수정 비밀번호:');
