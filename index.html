@@ -271,7 +271,7 @@ window.startSync = function(cb) {
     </div>
   </div>
 </div>
-<div class="split-modal hidden" id="splitModal"><div class="split-modal-inner"><div class="split-modal-title">입금 추가</div><input class="split-inp" type="text" id="splitDescInp" placeholder="내용 (예: 계약금, 중도금, 잔금)"><input class="split-inp" type="text" inputmode="numeric" id="splitAmtInp" placeholder="금액" oninput="fmtAmt(this)"><input class="split-inp" type="text" id="splitDateInp" placeholder="날짜 (예: 5/13)"><div class="split-btns"><button class="split-btn-cancel" onclick="closeSplitModal()">취소</button><button class="split-btn-ok" onclick="confirmSplit()">추가</button></div></div></div>
+<div class="split-modal hidden" id="splitModal"><div class="split-modal-inner"><div class="split-modal-title">입금 추가</div><input class="split-inp" type="text" id="splitDescInp" placeholder="내용 (예: 계약금, 중도금, 잔금)"><input class="split-inp" type="text" inputmode="numeric" id="splitAmtInp" placeholder="금액" oninput="formatAmtInput(this)"><input class="split-inp" type="text" id="splitDateInp" placeholder="날짜 (예: 5/13)"><div class="split-btns"><button class="split-btn-cancel" onclick="closeSplitModal()">취소</button><button class="split-btn-ok" onclick="confirmSplit()">추가</button></div></div></div>
 <div class="toast" id="toast"></div>
 <div class="tax-popup hidden" id="taxPopup">
   <div class="tax-popup-inner">
