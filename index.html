@@ -185,21 +185,35 @@ window.loadFromCloud = async function() {
     if (snap.exists) {
       const d = snap.data();
       return {
-        misugeum: JSON.parse(d.misugeum || '[]'),
-        jigeum: JSON.parse(d.jigeum || '[]')
+        misugeum: autoSplitCompany(JSON.parse(d.misugeum || '[]')),
+        jigeum: autoSplitCompany(JSON.parse(d.jigeum || '[]'))
       };
     }
   } catch(e) { console.error('로드실패:', e); }
   return null;
 };
 
+function autoSplitCompany(items) {
+  const cos = ["주식회사 대덕R&P","주식회사 지트","삼월중량 화물","삼월중량","한국유니콤밸브","동국실업","지티에스","진성테크","한울테크","케이테크","한국신광","제일이엔에스","유한기계","디엔공작기계","경보엔지니어링","소울텍바이스","코닝정밀소재","대경툴","신용길","정밀원테크","신용정밀","화진","에이원인더스","디떠블유","형제정밀","만텍","대광지관","이봉은","머신툴","차세대기전","세일이엔지","대구화천","사하금형","대웅","대산에이피","유한자동차부품","대림eng","충무정밀","삼에스기계","전대흥","케이비오토텍","엠엠피아이","정우금속","allt","엠이엔지","건명특수기계","우리화스텍","최석진","비제이코리아","해왕","썬라이즈","성진eng","키츠코리아","효산","남양공업","동아지게차","아현전기","상록","yhb","세바","태양정밀조명","화천상공사","정보이엔지","올인테크","신일PMS","권기석","신화툴링","박성동","화물비","영주테크","길공구","세인트","안산정공","동산제닉스","디에이툴","에이치엠씨","일산공작기계","윤신재","와이에이치비클리너","위드비","툴젠","메카로","네오스펙","이종만","삼익thk","고속지게차","으뜸기술","황규확","유니언머신","디엠공작기계","대영정밀","일월중량","엠에이치머시너리","미래코리아","모산모터","다모아텍","코리아머신","태일시스템","테슬론","정기섭","세미테크","남부","윤원테크","대한기계","진명산업","성우eng","장비특수중량","목수들의세상","디엔테크","베스트","화천서비스","이양연","이명섭","박완","서동정밀","남북","통일공작기계","와이제이티","대상","컴스그린에너지","네오테크","메카로","지개차"].sort((a,b)=>b.length-a.length);
+  return items.map(it => {
+    if (it.company) return it;
+    const desc = (it.desc||'').trim();
+    let company = '', content = desc;
+    for (const c of cos) {
+      if (desc.startsWith(c)) { company = c; content = desc.slice(c.length).trim(); break; }
+    }
+    if (!company) { const p = desc.split(' '); company = p[0]; content = p.slice(1).join(' '); }
+    return {...it, company, content};
+  });
+}
+
 window.startSync = function(cb) {
   _DOC.onSnapshot((snap) => {
     if (snap.exists) {
       const d = snap.data();
       cb({
-        misugeum: JSON.parse(d.misugeum || '[]'),
-        jigeum: JSON.parse(d.jigeum || '[]')
+        misugeum: autoSplitCompany(JSON.parse(d.misugeum || '[]')),
+        jigeum: autoSplitCompany(JSON.parse(d.jigeum || '[]'))
       });
     }
   });
