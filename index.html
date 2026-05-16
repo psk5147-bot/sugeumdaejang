@@ -282,6 +282,7 @@ window.startSync = function(cb) {
 <div class="edit-popup hidden" id="editPopup">
   <div class="edit-popup-inner">
     <div class="edit-popup-title">내용 수정</div>
+    <input class="edit-inp" type="text" id="editCompanyInp" placeholder="업체명">
     <input class="edit-inp" type="text" id="editDescInp" placeholder="내용 입력">
     <div class="edit-btns">
       <button class="edit-btn-cancel" onclick="closeEditPopup()">취소</button>
@@ -850,7 +851,8 @@ function editDesc(i) {
   if (pw === null) return;
   if (pw !== '5143') { toast('비밀번호가 틀렸어요'); return; }
   editingIdx = i;
-  document.getElementById('editDescInp').value = data[tab][i].desc || '';
+  if (document.getElementById('editCompanyInp')) document.getElementById('editCompanyInp').value = data[tab][i].company || '';
+  document.getElementById('editDescInp').value = data[tab][i].content || data[tab][i].desc || '';
   document.getElementById('editPopup').classList.remove('hidden');
 }
 function closeEditPopup() {
@@ -861,7 +863,10 @@ function confirmEdit() {
   if (editingIdx === null) return;
   const newDesc = document.getElementById('editDescInp').value.trim();
   if (!newDesc) { toast('내용을 입력해주세요'); return; }
-  data[tab][editingIdx].desc = newDesc;
+  const newCompany = (document.getElementById('editCompanyInp') ? document.getElementById('editCompanyInp').value.trim() : '');
+  data[tab][editingIdx].company = newCompany;
+  data[tab][editingIdx].content = newDesc;
+  data[tab][editingIdx].desc = newCompany ? newCompany + ' ' + newDesc : newDesc;
   save(); render();
   closeEditPopup();
   toast('수정됐어요!');
