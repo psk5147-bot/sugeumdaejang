@@ -284,6 +284,7 @@ window.startSync = function(cb) {
     <div class="edit-popup-title">내용 수정</div>
     <input class="edit-inp" type="text" id="editCompanyInp" placeholder="업체명">
     <input class="edit-inp" type="text" id="editDescInp" placeholder="내용 입력">
+    <input class="edit-inp" type="text" inputmode="numeric" id="editAmtInp" placeholder="금액" oninput="formatAmtInput(this)">
     <div class="edit-btns">
       <button class="edit-btn-cancel" onclick="closeEditPopup()">취소</button>
       <button class="edit-btn-ok" onclick="confirmEdit()">수정</button>
@@ -738,7 +739,7 @@ function render() {
     const paidAmt = it.splits ? it.splits.reduce((s,sp)=>s+Number(sp.amt),0) : 0;
     const remainAmt = it.amt - paidAmt;
     const splitHtml = it.isSplit ? `<div class="split-detail">${(it.splits||[]).map(sp=>`<div class="split-row"><span class="split-row-label">${sp.desc}${sp.date?' ('+sp.date+')':''}</span><span class="split-row-amt">${fmt(sp.amt)}</span></div>`).join('')}<div class="split-remain"><span>잔여금액</span><span style="color:${remainAmt<=0?'#1a8a4a':'#d63030'}">${remainAmt<=0?'✅ 완납':fmt(remainAmt)}</span></div><button class="split-add-btn" onclick="openSplitModal(${ri})">+ 입금 추가</button></div>` : '';
-    return `<div class="item${it.done?' done':''}"><div class="check${it.done?' checked '+ck:''}" onclick="toggle(${ri})"></div><div class="item-body">${it.company?`<div class="item-company">${it.company}</div>`:""}<div class="item-desc" onclick="editDesc(${ri})" style="cursor:pointer">${it.content||it.desc}</div><div class="item-meta">${it.date?`<span class="item-date">${it.date}</span>`:''}<span class="item-amt ${cl}">${fmt(it.amt)}</span>${it.isSplit?'<span class="split-badge">분할</span>':''}<button class="tax-badge ${taxInfo.cls}" onclick="toggleTax(${ri})">${taxInfo.lbl}</button></div>${splitHtml}</div><div style="display:flex;flex-direction:column;gap:4px;align-items:center;flex-shrink:0"><button class="item-del" onclick="editAmt(${ri})" title="금액수정">✏️</button><button class="item-del" onclick="del(${ri})">×</button></div></div>`;
+    return `<div class="item${it.done?' done':''}"><div class="check${it.done?' checked '+ck:''}" onclick="toggle(${ri})"></div><div class="item-body">${it.company?`<div class="item-company">${it.company}</div>`:""}<div class="item-desc" onclick="editDesc(${ri})" style="cursor:pointer">${it.content||it.desc}</div><div class="item-meta">${it.date?`<span class="item-date">${it.date}</span>`:''}<span class="item-amt ${cl}">${fmt(it.amt)}</span>${it.isSplit?'<span class="split-badge">분할</span>':''}<button class="tax-badge ${taxInfo.cls}" onclick="toggleTax(${ri})">${taxInfo.lbl}</button></div>${splitHtml}</div><div style="display:flex;flex-direction:column;gap:4px;align-items:center;flex-shrink:0"><button class="item-del" onclick="editDesc(${ri})" title="수정">✏️</button><button class="item-del" onclick="del(${ri})">×</button></div></div>`;
   }).join('');
 }
 
@@ -853,6 +854,8 @@ function editDesc(i) {
   editingIdx = i;
   if (document.getElementById('editCompanyInp')) document.getElementById('editCompanyInp').value = data[tab][i].company || '';
   document.getElementById('editDescInp').value = data[tab][i].content || data[tab][i].desc || '';
+  const amtInp = document.getElementById('editAmtInp');
+  if (amtInp) amtInp.value = data[tab][i].amt ? data[tab][i].amt.toLocaleString('ko-KR') : '';
   document.getElementById('editPopup').classList.remove('hidden');
 }
 function closeEditPopup() {
@@ -864,6 +867,11 @@ function confirmEdit() {
   const newDesc = document.getElementById('editDescInp').value.trim();
   if (!newDesc) { toast('내용을 입력해주세요'); return; }
   const newCompany = (document.getElementById('editCompanyInp') ? document.getElementById('editCompanyInp').value.trim() : '');
+  const amtInp = document.getElementById('editAmtInp');
+  if (amtInp && amtInp.value.trim()) {
+    const newAmt = Number(amtInp.value.replace(/,/g,''));
+    if (!isNaN(newAmt) && newAmt > 0) data[tab][editingIdx].amt = newAmt;
+  }
   data[tab][editingIdx].company = newCompany;
   data[tab][editingIdx].content = newDesc;
   data[tab][editingIdx].desc = newCompany ? newCompany + ' ' + newDesc : newDesc;
