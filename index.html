@@ -827,7 +827,7 @@ function renderEditSplitRows() {
     div.innerHTML = `
       <input type="text" value="${s.desc}" placeholder="항목명" style="flex:3;min-width:0;" oninput="editSplitItems[${i}].desc=this.value" />
       <input type="text" value="${s.date}" placeholder="날짜" style="flex:2;min-width:0;" oninput="editSplitItems[${i}].date=this.value" />
-      <input type="text" value="${s.amt ? Number(s.amt).toLocaleString('ko-KR') : ''}" placeholder="금액" style="flex:3;min-width:0;" oninput="editSplitItems[${i}].amt=Number(this.value.replace(/,/g,''));updateEditSplitTotal()" />
+      <input type="text" value="${s.amt ? Number(s.amt).toLocaleString('ko-KR') : ''}" placeholder="금액" style="flex:3;min-width:0;" oninput="editSplitItems[${i}].amt=Number(this.value.replace(/,/g,''));updateEditSplitTotal();autoFillLast(${i})" />
       <button onclick="removeEditSplitRow(${i})" style="background:transparent;border:none;cursor:pointer;color:#aaa;font-size:16px;padding:4px;flex-shrink:0;">✕</button>
     `;
     cont.appendChild(div);
@@ -843,6 +843,19 @@ function addEditSplitRow() {
 function removeEditSplitRow(i) {
   editSplitItems.splice(i, 1);
   renderEditSplitRows();
+}
+
+function autoFillLast(changedIdx) {
+  // 마지막 항목이 아닌 곳에서 입력했을 때만 잔금 자동계산
+  if (changedIdx !== editSplitItems.length - 2) return;
+  const totalAmt = Number(document.getElementById('editAmtInp').value.replace(/,/g,'')) || 0;
+  if (!totalAmt) return;
+  const sumExceptLast = editSplitItems.slice(0, -1).reduce((a, s) => a + Number(s.amt), 0);
+  const remain = totalAmt - sumExceptLast;
+  if (remain > 0) {
+    editSplitItems[editSplitItems.length - 1].amt = remain;
+    renderEditSplitRows();
+  }
 }
 
 function updateEditSplitTotal() {
