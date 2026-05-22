@@ -787,7 +787,7 @@ function editDesc(i) {
   editSplitOn = it.isSplit || false;
   editSplitItems = it.splits ? JSON.parse(JSON.stringify(it.splits)) : [];
   if (editSplitOn && editSplitItems.length === 0) {
-    editSplitItems = [{desc:'계약금', amt:0, date:''}, {desc:'잔금', amt:0, date:''}];
+    const _td=new Date(); const _today=(_td.getMonth()+1)+'/'+_td.getDate(); editSplitItems = [{desc:'계약금', amt:0, date:_today}];
   }
 
   const btn = document.getElementById('editSplitToggle');
@@ -809,7 +809,7 @@ function toggleEditSplit() {
     btn.style.background='#fff3cd'; btn.style.color='#856404'; btn.style.borderColor='#ffc107'; btn.textContent='분할✓';
     sec.style.display = 'block';
     if (editSplitItems.length === 0) {
-      editSplitItems = [{desc:'계약금', amt:0, date:''}, {desc:'잔금', amt:0, date:''}];
+      const _td=new Date(); const _today=(_td.getMonth()+1)+'/'+_td.getDate(); editSplitItems = [{desc:'계약금', amt:0, date:_today}];
     }
     renderEditSplitRows();
   } else {
