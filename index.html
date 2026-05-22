@@ -836,7 +836,7 @@ function renderEditSplitRows() {
 }
 
 function addEditSplitRow() {
-  editSplitItems.push({desc:'', amt:0, date:''});
+  const _d = new Date(); editSplitItems.push({desc:'', amt:0, date:(_d.getMonth()+1)+'/'+_d.getDate()});
   renderEditSplitRows();
 }
 
