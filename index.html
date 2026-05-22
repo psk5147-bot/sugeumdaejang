@@ -850,9 +850,7 @@ function removeEditSplitRow(i) {
 }
 
 function autoFillLast(changedIdx) {
-  // 항목이 하나뿐이면 자동계산 없음
   if (editSplitItems.length < 2) return;
-  // 마지막 항목 입력 시엔 자동계산 안함
   if (changedIdx === editSplitItems.length - 1) return;
   const totalAmt = Number(document.getElementById('editAmtInp').value.replace(/,/g,'')) || 0;
   if (!totalAmt) return;
@@ -860,7 +858,14 @@ function autoFillLast(changedIdx) {
   const remain = totalAmt - sumExceptLast;
   if (remain >= 0) {
     editSplitItems[editSplitItems.length - 1].amt = remain;
-    renderEditSplitRows();
+    // 마지막 행의 금액 input만 직접 업데이트 (렌더링 없이)
+    const rows = document.getElementById('editSplitRows').children;
+    const lastRow = rows[rows.length - 1];
+    if (lastRow) {
+      const lastInp = lastRow.querySelectorAll('input')[2];
+      if (lastInp) lastInp.value = remain.toLocaleString('ko-KR');
+    }
+    updateEditSplitTotal();
   }
 }
 
