@@ -102,7 +102,7 @@
   .tax-popup{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:flex-end;justify-content:center}
   .edit-popup{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:center;justify-content:center}
   .edit-popup.hidden{display:none}
-  .edit-popup-inner{background:#fff;width:90%;max-width:400px;border-radius:16px;padding:20px}
+  .edit-popup-inner{background:#fff;width:90%;max-width:400px;border-radius:16px;padding:20px;max-height:90vh;overflow-y:auto}
   .edit-popup-title{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--text)}
   .edit-inp{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;margin-bottom:10px;color:var(--text)}
   .edit-btns{display:flex;gap:8px}
@@ -144,6 +144,11 @@
   .split-btns{display:flex;gap:8px;margin-top:4px}
   .split-btn-ok{flex:1;padding:10px;background:#2563eb;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
   .split-btn-cancel{flex:1;padding:10px;background:#f0f0f0;border:none;border-radius:8px;color:#666;font-size:14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+
+  .edit-split-item{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+  .edit-split-item input{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;background:var(--bg3);color:var(--text);min-width:0}
+  .edit-split-add{width:100%;padding:8px;border:1px dashed #ccc;border-radius:8px;background:transparent;color:#888;font-size:12px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-bottom:8px}
+  .edit-split-total{display:flex;justify-content:space-between;padding:8px 12px;border-radius:8px;background:var(--bg3);font-size:13px;margin-bottom:10px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -224,6 +229,12 @@ window.startSync=function(cb){_DOC.onSnapshot((snap)=>{if(snap.exists){const d=s
     <input class="edit-inp" type="text" id="editCompanyInp" placeholder="업체명">
     <input class="edit-inp" type="text" id="editDescInp" placeholder="내용 입력">
     <input class="edit-inp" type="text" inputmode="numeric" id="editAmtInp" placeholder="금액" oninput="formatAmtInput(this)">
+    <button id="editSplitToggle" onclick="toggleEditSplit()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-bottom:10px;">분할</button>
+    <div id="editSplitSection" style="display:none">
+      <div id="editSplitRows"></div>
+      <button class="edit-split-add" onclick="addEditSplitRow()">+ 항목 추가</button>
+      <div class="edit-split-total"><span style="color:var(--text2)">합계</span><span id="editSplitTotal" style="font-weight:700">0원</span></div>
+    </div>
     <div class="edit-btns">
       <button class="edit-btn-cancel" onclick="closeEditPopup()">취소</button>
       <button class="edit-btn-ok" onclick="confirmEdit()">수정</button>
@@ -283,9 +294,79 @@ function openSplitModal(i){splitTargetIdx=i;document.getElementById('splitDescIn
 function closeSplitModal(){splitTargetIdx=null;document.getElementById('splitModal').classList.add('hidden');}
 function confirmSplit(){if(splitTargetIdx===null)return;const desc=document.getElementById('splitDescInp').value.trim()||'입금';const amt=Number(document.getElementById('splitAmtInp').value.replace(/,/g,''));const date=document.getElementById('splitDateInp').value.trim();if(!amt){toast('금액을 입력해주세요');return;}if(!data[tab][splitTargetIdx].splits)data[tab][splitTargetIdx].splits=[];data[tab][splitTargetIdx].splits.push({desc,amt,date,id:Date.now()});const total=data[tab][splitTargetIdx].amt;const paid=data[tab][splitTargetIdx].splits.reduce((s,sp)=>s+Number(sp.amt),0);if(paid>=total)data[tab][splitTargetIdx].done=true;save();render();closeSplitModal();toast('입금 추가됐어요!');}
 let editingIdx=null;
-function editDesc(i){const pw=prompt('수정 비밀번호:');if(pw===null)return;if(pw!=='5143'){toast('비밀번호가 틀렸어요');return;}editingIdx=i;if(document.getElementById('editCompanyInp'))document.getElementById('editCompanyInp').value=data[tab][i].company||'';document.getElementById('editDescInp').value=data[tab][i].content||data[tab][i].desc||'';const amtInp=document.getElementById('editAmtInp');if(amtInp)amtInp.value=data[tab][i].amt?data[tab][i].amt.toLocaleString('ko-KR'):'';document.getElementById('editPopup').classList.remove('hidden');}
+function editDesc(i){const pw=prompt('수정 비밀번호:');if(pw===null)return;if(pw!=='5143'){toast('비밀번호가 틀렸어요');return;}editingIdx=i;if(document.getElementById('editCompanyInp'))document.getElementById('editCompanyInp').value=data[tab][i].company||'';document.getElementById('editDescInp').value=data[tab][i].content||data[tab][i].desc||'';const amtInp=document.getElementById('editAmtInp');if(amtInp)amtInp.value=data[tab][i].amt?data[tab][i].amt.toLocaleString('ko-KR'):'';document.getElementById('editPopup').classList.remove('hidden');
+  // 분할 초기화
+  editSplitOn=data[tab][i].isSplit||false;
+  editSplitItems=data[tab][i].splits?JSON.parse(JSON.stringify(data[tab][i].splits)):[];
+  const _btn=document.getElementById('editSplitToggle');
+  if(editSplitOn){_btn.style.background='#fff3cd';_btn.style.color='#856404';_btn.style.borderColor='#ffc107';_btn.textContent='분할✓';}
+  else{_btn.style.background='';_btn.style.color='';_btn.style.borderColor='';_btn.textContent='분할';}
+  document.getElementById('editSplitSection').style.display=editSplitOn?'block':'none';
+  renderEditSplitRows();}
 function closeEditPopup(){editingIdx=null;document.getElementById('editPopup').classList.add('hidden');}
-function confirmEdit(){if(editingIdx===null)return;const newDesc=document.getElementById('editDescInp').value.trim();if(!newDesc){toast('내용을 입력해주세요');return;}const newCompany=(document.getElementById('editCompanyInp')?document.getElementById('editCompanyInp').value.trim():'');const amtInp=document.getElementById('editAmtInp');if(amtInp&&amtInp.value.trim()){const newAmt=Number(amtInp.value.replace(/,/g,''));if(!isNaN(newAmt)&&newAmt>0)data[tab][editingIdx].amt=newAmt;}data[tab][editingIdx].company=newCompany;data[tab][editingIdx].content=newDesc;data[tab][editingIdx].desc=newCompany?newCompany+' '+newDesc:newDesc;save();render();closeEditPopup();toast('수정됐어요!');}
+function confirmEdit(){if(editingIdx===null)return;const newDesc=document.getElementById('editDescInp').value.trim();if(!newDesc){toast('내용을 입력해주세요');return;}const newCompany=(document.getElementById('editCompanyInp')?document.getElementById('editCompanyInp').value.trim():'');const amtInp=document.getElementById('editAmtInp');if(amtInp&&amtInp.value.trim()){const newAmt=Number(amtInp.value.replace(/,/g,''));if(!isNaN(newAmt)&&newAmt>0)data[tab][editingIdx].amt=newAmt;}data[tab][editingIdx].company=newCompany;data[tab][editingIdx].content=newDesc;data[tab][editingIdx].desc=newCompany?newCompany+' '+newDesc:newDesc;data[tab][editingIdx].isSplit=editSplitOn;
+  data[tab][editingIdx].splits=editSplitOn?[...editSplitItems]:[];
+  if(editSplitOn&&editSplitItems.length>0){const _total=data[tab][editingIdx].amt;const _paid=editSplitItems.reduce((a,s)=>a+Number(s.amt),0);if(_paid>=_total)data[tab][editingIdx].done=true;}
+  save();render();closeEditPopup();toast('수정됐어요!');} 
+
+let editSplitOn=false;
+let editSplitItems=[];
+function toggleEditSplit(){
+  editSplitOn=!editSplitOn;
+  const btn=document.getElementById('editSplitToggle');
+  const sec=document.getElementById('editSplitSection');
+  if(editSplitOn){
+    btn.style.background='#fff3cd';btn.style.color='#856404';btn.style.borderColor='#ffc107';btn.textContent='분할✓';
+    sec.style.display='block';
+    if(editSplitItems.length===0){
+      const _d=new Date();const _t=(_d.getMonth()+1)+'/'+_d.getDate();
+      editSplitItems=[{desc:'계약금',amt:0,date:_t}];
+    }
+    renderEditSplitRows();
+  }else{
+    btn.style.background='';btn.style.color='';btn.style.borderColor='';btn.textContent='분할';
+    sec.style.display='none';
+  }
+}
+function renderEditSplitRows(){
+  const cont=document.getElementById('editSplitRows');
+  cont.innerHTML='';
+  editSplitItems.forEach((s,i)=>{
+    const div=document.createElement('div');
+    div.className='edit-split-item';
+    div.innerHTML=`<input type="text" value="${s.desc}" placeholder="항목명" style="flex:3" oninput="editSplitItems[${i}].desc=this.value"/>
+      <input type="text" value="${s.date}" placeholder="날짜" style="flex:2" oninput="editSplitItems[${i}].date=this.value"/>
+      <input type="text" inputmode="numeric" value="${s.amt?Number(s.amt).toLocaleString('ko-KR'):''}" placeholder="금액" style="flex:3" oninput="formatSplitAmt(this,${i})"/>
+      <button onclick="removeEditSplitRow(${i})" style="background:transparent;border:none;cursor:pointer;color:#aaa;font-size:16px;flex-shrink:0">✕</button>`;
+    cont.appendChild(div);
+  });
+  updateEditSplitTotal();
+}
+function formatSplitAmt(el,i){
+  const raw=el.value.replace(/,/g,'').replace(/[^0-9]/g,'');
+  const num=Number(raw)||0;
+  editSplitItems[i].amt=num;
+  const pos=el.selectionStart;const prevLen=el.value.length;
+  el.value=num?num.toLocaleString('ko-KR'):'';
+  el.selectionStart=el.selectionEnd=pos+(el.value.length-prevLen);
+  updateEditSplitTotal();
+}
+function addEditSplitRow(){
+  const _d=new Date();const _t=(_d.getMonth()+1)+'/'+_d.getDate();
+  const totalAmt=Number(document.getElementById('editAmtInp').value.replace(/,/g,''))||0;
+  const sumSoFar=editSplitItems.reduce((a,s)=>a+Number(s.amt),0);
+  const remain=totalAmt-sumSoFar;
+  editSplitItems.push({desc:'',amt:remain>0?remain:0,date:_t});
+  renderEditSplitRows();
+}
+function removeEditSplitRow(i){editSplitItems.splice(i,1);renderEditSplitRows();}
+function updateEditSplitTotal(){
+  const sum=editSplitItems.reduce((a,s)=>a+Number(s.amt),0);
+  const totalAmt=Number(document.getElementById('editAmtInp').value.replace(/,/g,''))||0;
+  const el=document.getElementById('editSplitTotal');
+  el.textContent=sum.toLocaleString('ko-KR')+'원';
+  el.style.color=sum===totalAmt?'#1a8a4a':sum>totalAmt?'#d63030':'var(--text)';
+}
 function toggle(i){data[tab][i].done=!data[tab][i].done;save();render();}
 function del(i){const pw=prompt('삭제 비밀번호를 입력하세요:');if(pw===null)return;if(pw!=='5143'){toast('비밀번호가 틀렸어요');return;}if(!confirm('정말 삭제할까요?'))return;data[tab].splice(i,1);save();render();toast('삭제됐어요');}
 document.getElementById('inpDate').addEventListener('keydown',e=>{if(e.key==='Enter')addItem();});
