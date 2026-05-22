@@ -157,7 +157,7 @@
   .toggle-sw.on::after{left:21px}
   .edit-split-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
   .edit-split-item{display:flex;gap:6px;align-items:center}
-  .edit-split-item input{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;background:var(--bg3);color:var(--text)}
+  .edit-split-item{overflow:hidden}.edit-split-item input{padding:8px 8px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;background:var(--bg3);color:var(--text);min-width:0;width:100%}
   .edit-split-item input:focus{border-color:#d4940a}
   .edit-split-add{width:100%;padding:8px;border:1px dashed #ccc;border-radius:8px;background:transparent;color:#888;font-size:12px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-bottom:8px}
   .edit-split-total{display:flex;justify-content:space-between;padding:8px 10px;border-radius:8px;background:var(--bg3);font-size:13px}
@@ -825,9 +825,9 @@ function renderEditSplitRows() {
     const div = document.createElement('div');
     div.className = 'edit-split-item';
     div.innerHTML = `
-      <input type="text" value="${s.desc}" placeholder="항목명" style="flex:2;" oninput="editSplitItems[${i}].desc=this.value" />
-      <input type="text" value="${s.date}" placeholder="날짜" style="flex:1.2;" oninput="editSplitItems[${i}].date=this.value" />
-      <input type="text" value="${s.amt ? Number(s.amt).toLocaleString('ko-KR') : ''}" placeholder="금액" style="flex:2;" oninput="editSplitItems[${i}].amt=Number(this.value.replace(/,/g,''));updateEditSplitTotal()" />
+      <input type="text" value="${s.desc}" placeholder="항목명" style="flex:3;min-width:0;" oninput="editSplitItems[${i}].desc=this.value" />
+      <input type="text" value="${s.date}" placeholder="날짜" style="flex:2;min-width:0;" oninput="editSplitItems[${i}].date=this.value" />
+      <input type="text" value="${s.amt ? Number(s.amt).toLocaleString('ko-KR') : ''}" placeholder="금액" style="flex:3;min-width:0;" oninput="editSplitItems[${i}].amt=Number(this.value.replace(/,/g,''));updateEditSplitTotal()" />
       <button onclick="removeEditSplitRow(${i})" style="background:transparent;border:none;cursor:pointer;color:#aaa;font-size:16px;padding:4px;flex-shrink:0;">✕</button>
     `;
     cont.appendChild(div);
