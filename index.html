@@ -836,7 +836,11 @@ function renderEditSplitRows() {
 }
 
 function addEditSplitRow() {
-  const _d = new Date(); editSplitItems.push({desc:'', amt:0, date:(_d.getMonth()+1)+'/'+_d.getDate()});
+  const _d = new Date(); const _today = (_d.getMonth()+1)+'/'+_d.getDate();
+  const totalAmt = Number(document.getElementById('editAmtInp').value.replace(/,/g,'')) || 0;
+  const sumSoFar = editSplitItems.reduce((a,s)=>a+Number(s.amt),0);
+  const remain = totalAmt - sumSoFar;
+  editSplitItems.push({desc:'', amt: remain > 0 ? remain : 0, date:_today});
   renderEditSplitRows();
 }
 
@@ -846,13 +850,15 @@ function removeEditSplitRow(i) {
 }
 
 function autoFillLast(changedIdx) {
-  // 마지막 항목이 아닌 곳에서 입력했을 때만 잔금 자동계산
-  if (changedIdx !== editSplitItems.length - 2) return;
+  // 항목이 하나뿐이면 자동계산 없음
+  if (editSplitItems.length < 2) return;
+  // 마지막 항목 입력 시엔 자동계산 안함
+  if (changedIdx === editSplitItems.length - 1) return;
   const totalAmt = Number(document.getElementById('editAmtInp').value.replace(/,/g,'')) || 0;
   if (!totalAmt) return;
   const sumExceptLast = editSplitItems.slice(0, -1).reduce((a, s) => a + Number(s.amt), 0);
   const remain = totalAmt - sumExceptLast;
-  if (remain > 0) {
+  if (remain >= 0) {
     editSplitItems[editSplitItems.length - 1].amt = remain;
     renderEditSplitRows();
   }
