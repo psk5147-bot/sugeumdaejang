@@ -1,197 +1,1026 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>품목 수정 - 분할</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; padding: 2rem 1rem; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="수금대장">
+<meta name="theme-color" content="#0f0f0f">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<title>수금대장</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#f5f5f5;--bg2:#ffffff;--bg3:#f0f0f0;--border:#e0e0e0;
+    --text:#1a1a1a;--text2:#666;--text3:#aaa;
+    --red:#d63030;--red-bg:#fdecea;--green:#1a8a4a;--green-bg:#e8f5ee;--accent:#d4940a;
+  }
+  html,body{height:100%;background:#f5f5f5;color:var(--text);font-family:'Noto Sans KR',sans-serif;overflow:hidden}
+  .app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+  .header{padding:env(safe-area-inset-top,16px) 20px 0;background:#f5f5f5}
+  .header-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 0 0}
+  .app-title{font-size:22px;font-weight:700;letter-spacing:-0.5px}
+  .header-date{font-size:12px;color:var(--text2)}
+  .tabs{display:flex;padding:12px 20px 0;gap:6px}
+  .tab{flex:1;padding:10px 0;border-radius:10px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:14px;font-weight:500;color:var(--text2);font-family:'Noto Sans KR',sans-serif;transition:all 0.2s}
+  .tab.active.misugeum{background:var(--red-bg);color:var(--red);border-color:var(--red)}
+  .tab.active.jigeum{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+  .summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 20px 0}
+  .stat{background:var(--bg2);border-radius:12px;padding:12px 14px;border:1px solid var(--border)}
+  .stat-label{font-size:11px;color:var(--text2);margin-bottom:4px}
+  .stat-val{font-size:18px;font-weight:700;letter-spacing:-0.5px}
+  .stat-val.red{color:var(--red)}.stat-val.green{color:var(--green)}.stat-val.neutral{color:var(--text)}
+  .list-wrap{flex:1;overflow-y:auto;padding:12px 20px;-webkit-overflow-scrolling:touch}
+  .filter-row{display:flex;gap:6px;margin-bottom:10px}
+  .filter-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:12px;color:var(--text2);font-family:'Noto Sans KR',sans-serif;transition:all 0.15s}
+  .filter-btn.active{background:var(--bg3);color:var(--text);border-color:#555}
+  .search-box{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg3);color:var(--text);font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;margin-bottom:8px}
+  .search-box:focus{border-color:#555}
+  .month-filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .month-btn{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:11px;color:var(--text2);font-family:'Noto Sans KR',sans-serif;transition:all 0.15s}
+  .month-btn.active{background:var(--bg3);color:var(--text);border-color:#555}
+  .list{display:flex;flex-direction:column;gap:6px}
+  .item{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#ffffff;border:1px solid var(--border);border-radius:12px;transition:opacity 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+  .item.done{opacity:0.4}
+  .item.done .item-desc{text-decoration:line-through;color:var(--text2)}
+  .check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:transparent;transition:all 0.2s}
+  .check.checked.mis{background:var(--red);border-color:var(--red)}
+  .check.checked.ji{background:var(--green);border-color:var(--green)}
+  .check.checked::after{content:'';display:block;width:5px;height:9px;border:2px solid white;border-top:none;border-left:none;transform:rotate(45deg) translate(-1px,-1px)}
+  .item-body{flex:1;min-width:0}
+  .item-company{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:2px}
+  .item-desc{font-size:13px;color:var(--text);line-height:1.4;word-break:break-all}
+  .item-meta{display:flex;align-items:center;gap:8px;margin-top:3px}
+  .item-date{font-size:11px;color:var(--text3)}
+  .item-amt{font-size:13px;font-weight:700}
+  .item-amt.red{color:var(--red)}.item-amt.green{color:var(--green)}
+  .item-del{background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3);padding:4px 6px;border-radius:6px;flex-shrink:0;line-height:1}
+  .item-del:active{color:var(--red);background:var(--red-bg)}
+  .empty{text-align:center;padding:3rem 0;color:var(--text3);font-size:14px}
+  .tax-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;cursor:pointer;flex-shrink:0;border:none;font-family:'Noto Sans KR',sans-serif;transition:all 0.2s;white-space:nowrap}
+  .tax-badge.issued{background:#1a2e1a;color:#4caf85;border:1px solid #2a4a2a}
+  .tax-badge.pending{background:#2a2210;color:#f0c040;border:1px solid #4a3a10}
+  .tax-badge.none{background:#1e1e1e;color:#666;border:1px solid #333}
+  .input-area{background:#ffffff;border-top:1px solid var(--border);padding:12px 20px;padding-bottom:max(12px,env(safe-area-inset-bottom))}
+  .input-row{display:flex;gap:8px;margin-bottom:8px}
+  .inp{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);font-family:'Noto Sans KR',sans-serif;outline:none;-webkit-appearance:none}
+  .inp:focus{border-color:#555}
+  .inp::placeholder{color:var(--text3)}
+  .inp-sm{width:90px;flex:none}.inp-date{width:70px;flex:none}
+  .btn-add{padding:10px 18px;background:var(--accent);border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700;color:#0f0f0f;font-family:'Noto Sans KR',sans-serif;white-space:nowrap;flex-shrink:0}
+  .btn-add:active{opacity:0.8;transform:scale(0.97)}
+  .toast{position:fixed;bottom:120px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:999;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .tab.suyik{color:var(--text2)}
+  .tab.active.suyik{background:#ebebff;color:#5555dd;border-color:#5555dd}
+  .modal-overlay{position:fixed;inset:0;background:#f5f5f5;z-index:100;display:flex;flex-direction:column;overflow-y:auto;padding:env(safe-area-inset-top,20px) 0 env(safe-area-inset-bottom,20px)}
+  .modal-overlay.hidden{display:none}
+  .modal{background:#f5f5f5;margin:auto;width:100%;max-width:480px;padding:20px;min-height:100vh}
+  .modal-title{font-size:18px;font-weight:700;margin-bottom:16px;letter-spacing:-0.5px}
+  .month-card{background:#ffffff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+  .month-label{font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:500}
+  .month-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:4px}
+  .month-row:last-child{margin-bottom:0}
+  .month-row .label{color:var(--text2)}
+  .month-row .val{font-weight:700}
+  .val.pos{color:#4caf85}.val.neg{color:#e05a4e}.val.neutral{color:var(--text)}
+  .year-card{background:#ffffff;border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+  .year-title{font-size:13px;color:var(--text2);margin-bottom:10px}
+  .year-big{font-size:26px;font-weight:700;letter-spacing:-1px}
+  .year-big.pos{color:#4caf85}.year-big.neg{color:#e05a4e}
+  .archive-btn{width:100%;padding:12px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:8px}
+  .archive-btn:active{background:var(--bg2)}
+  .archive-section{margin-top:16px}
+  .archive-title{font-size:12px;color:var(--text3);margin-bottom:8px}
+  .archive-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:6px;cursor:pointer}
+  .archive-item-label{font-size:13px;color:var(--text2)}
+  .archive-item-val{font-size:15px;font-weight:700;margin-top:2px}
+  .back-btn{display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--text2);font-size:14px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;padding:0 0 16px 0}
+  .tax-popup{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+  .edit-popup{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:center;justify-content:center}
+  .edit-popup.hidden{display:none}
+  .edit-popup-inner{background:#fff;width:90%;max-width:400px;border-radius:16px;padding:20px;max-height:90vh;overflow-y:auto}
+  .edit-popup-title{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--text)}
+  .edit-inp{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;margin-bottom:10px;color:var(--text)}
+  .edit-btns{display:flex;gap:8px}
+  .edit-btn-ok{flex:1;padding:10px;background:var(--accent);border:none;border-radius:10px;color:#0f0f0f;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+  .edit-btn-cancel{flex:1;padding:10px;background:var(--bg3);border:none;border-radius:10px;color:var(--text2);font-size:14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+  .tax-popup.hidden{display:none}
+  .tax-popup-inner{background:#ffffff;width:100%;max-width:480px;border-radius:16px 16px 0 0;padding:20px;padding-bottom:max(20px,env(safe-area-inset-bottom))}
+  .tax-popup-title{font-size:14px;color:var(--text2);margin-bottom:14px;text-align:center}
+  .tax-option{width:100%;padding:14px;margin-bottom:8px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;font-size:15px;font-weight:500;font-family:'Noto Sans KR',sans-serif;color:var(--text);text-align:left}
+  .tax-option.opt-issued{color:#4caf85;border-color:#2a4a2a;background:#1a2e1a}
+  .tax-option.opt-pending{color:#f0c040;border-color:#4a3a10;background:#2a2210}
+  .tax-option.opt-none{color:#888;border-color:#333;background:#1e1e1e}
+  .tax-option-cancel{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:14px;font-family:'Noto Sans KR',sans-serif;color:var(--text2);margin-top:4px}
 
-    .card { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 1rem 1.25rem; max-width: 600px; margin: 0 auto; }
-    .badge { font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 20px; display: inline-block; }
+  .lock-screen{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;background:#1e40af}
+  .lock-screen.hidden{display:none}
+  .lock-card{background:#fff;border-radius:20px;padding:36px 32px;width:100%;max-width:320px;display:flex;flex-direction:column;align-items:center;box-shadow:0 8px 32px rgba(0,0,0,0.2)}
+  .lock-icon{width:60px;height:60px;background:#eff6ff;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;font-size:26px}
+  .lock-title{font-size:20px;font-weight:700;color:#1a1a1a;margin-bottom:4px;letter-spacing:-0.5px}
+  .lock-sub{font-size:13px;color:#666;margin-bottom:24px}
+  .lock-inp{width:100%;padding:13px 16px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;font-family:'Noto Sans KR',sans-serif;outline:none;text-align:center;letter-spacing:3px;margin-bottom:10px;background:#f7f7f7;color:#1a1a1a}
+  .lock-inp:focus{border-color:#2563eb;background:#fff}
+  .lock-btn{width:100%;padding:13px;background:#2563eb;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+  .lock-btn:active{opacity:0.9}
+  .lock-err{font-size:12px;color:#dc2626;margin-top:8px;min-height:18px;text-align:center}
 
-    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); align-items: flex-start; justify-content: center; padding: 2rem 1rem; z-index: 100; overflow-y: auto; }
-    .overlay.open { display: flex; }
-    .modal { background: #fff; border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 440px; margin-top: 1rem; }
+  .split-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:#fff3cd;color:#856404;border:1px solid #ffc107;white-space:nowrap}
+  .split-detail{background:#f8f9fa;border-radius:8px;padding:8px 10px;margin-top:6px;font-size:12px}
+  .split-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #eee}
+  .split-row:last-child{border-bottom:none}
+  .split-row-label{color:#666}
+  .split-row-amt{font-weight:600;color:#1a8a4a}
+  .split-remain{display:flex;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid #ddd;font-weight:700;font-size:13px}
+  .split-add-btn{width:100%;margin-top:6px;padding:6px;background:#fff;border:1px dashed #ccc;border-radius:8px;cursor:pointer;font-size:12px;color:#666;font-family:'Noto Sans KR',sans-serif}
+  .split-modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:flex;align-items:center;justify-content:center}
+  .split-modal.hidden{display:none}
+  .split-modal-inner{background:#fff;border-radius:16px;padding:20px;width:90%;max-width:360px}
+  .split-modal-title{font-size:15px;font-weight:700;margin-bottom:14px;color:#1a1a1a}
+  .split-inp{width:100%;padding:10px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;margin-bottom:8px}
+  .split-inp:focus{border-color:#2563eb}
+  .split-btns{display:flex;gap:8px;margin-top:4px}
+  .split-btn-ok{flex:1;padding:10px;background:#2563eb;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+  .split-btn-cancel{flex:1;padding:10px;background:#f0f0f0;border:none;border-radius:8px;color:#666;font-size:14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
 
-    .inp { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; background: #f9f9f9; color: #111; }
-    .inp:focus { outline: none; border-color: #C8981A; }
+  /* 수정 모달 분할 섹션 */
+  .edit-split-section{margin-top:12px;border-top:1px solid var(--border);padding-top:12px}
+  .edit-split-toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .edit-split-label{font-size:13px;font-weight:700;color:var(--text)}
+  .toggle-sw{width:42px;height:24px;border-radius:12px;background:#ddd;border:none;position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0}
+  .toggle-sw.on{background:#d4940a}
+  .toggle-sw::after{content:'';width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:left 0.2s}
+  .toggle-sw.on::after{left:21px}
+  .edit-split-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+  .edit-split-item{display:flex;gap:6px;align-items:center}
+  .edit-split-item input{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;background:var(--bg3);color:var(--text)}
+  .edit-split-item input:focus{border-color:#d4940a}
+  .edit-split-add{width:100%;padding:8px;border:1px dashed #ccc;border-radius:8px;background:transparent;color:#888;font-size:12px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-bottom:8px}
+  .edit-split-total{display:flex;justify-content:space-between;padding:8px 10px;border-radius:8px;background:var(--bg3);font-size:13px}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+const _fbConfig = {
+  apiKey: "AIzaSyAxzmQDhFSu5sh7mgu37wdIzmwRt7ZnTi8",
+  authDomain: "sugeumdaejang.firebaseapp.com",
+  projectId: "sugeumdaejang",
+  storageBucket: "sugeumdaejang.firebasestorage.app",
+  messagingSenderId: "883862465831",
+  appId: "1:883862465831:web:ed0d835f01669ec4aecd02"
+};
+if (!firebase.apps.length) firebase.initializeApp(_fbConfig);
+const _db = firebase.firestore();
+const _DOC = _db.collection('soogeum').doc('2026');
 
-    .btn-cancel { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ddd; background: #f5f5f5; color: #666; font-size: 15px; cursor: pointer; }
-    .btn-confirm { flex: 2; padding: 12px; border-radius: 8px; border: none; background: #C8981A; color: #fff; font-size: 15px; font-weight: 500; cursor: pointer; }
+window.saveToCloud = async function(d) {
+  try {
+    await _DOC.set({
+      misugeum: JSON.stringify(d.misugeum),
+      jigeum: JSON.stringify(d.jigeum),
+      updatedAt: new Date().toISOString()
+    });
+  } catch(e) { console.error('저장실패:', e); }
+};
 
-    .split-row-card { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
-    .add-dashed { width: 100%; margin-top: 8px; padding: 10px; border: 1px dashed #ccc; border-radius: 8px; background: transparent; color: #999; font-size: 13px; cursor: pointer; }
+window.loadFromCloud = async function() {
+  try {
+    const snap = await _DOC.get();
+    if (snap.exists) {
+      const d = snap.data();
+      return {
+        misugeum: autoSplitCompany(JSON.parse(d.misugeum || '[]')),
+        jigeum: autoSplitCompany(JSON.parse(d.jigeum || '[]'))
+      };
+    }
+  } catch(e) { console.error('로드실패:', e); }
+  return null;
+};
 
-    /* 분할 토글 */
-    .toggle-wrap { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
-    .toggle { width: 42px; height: 24px; border-radius: 12px; background: #ddd; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; border: none; }
-    .toggle.on { background: #C8981A; }
-    .toggle::after { content: ''; width: 18px; height: 18px; border-radius: 50%; background: #fff; position: absolute; top: 3px; left: 3px; transition: left 0.2s; }
-    .toggle.on::after { left: 21px; }
+function autoSplitCompany(items) {
+  const cos = ["주식회사 대덕R&P","주식회사 지트","삼월중량 화물","삼월중량","한국유니콤밸브","동국실업","지티에스","진성테크","한울테크","케이테크","한국신광","제일이엔에스","유한기계","디엔공작기계","경보엔지니어링","소울텍바이스","코닝정밀소재","대경툴","신용길","정밀원테크","신용정밀","화진","에이원인더스","디떠블유","형제정밀","만텍","대광지관","이봉은","머신툴","차세대기전","세일이엔지","대구화천","사하금형","대웅","대산에이피","유한자동차부품","대림eng","충무정밀","삼에스기계","전대흥","케이비오토텍","엠엠피아이","정우금속","allt","엠이엔지","건명특수기계","우리화스텍","최석진","비제이코리아","해왕","썬라이즈","성진eng","키츠코리아","효산","남양공업","동아지게차","아현전기","상록","yhb","세바","태양정밀조명","화천상공사","정보이엔지","올인테크","신일PMS","권기석","신화툴링","박성동","화물비","영주테크","길공구","세인트","안산정공","동산제닉스","디에이툴","에이치엠씨","일산공작기계","윤신재","와이에이치비클리너","위드비","툴젠","메카로","네오스펙","이종만","삼익thk","고속지게차","으뜸기술","황규확","유니언머신","디엠공작기계","대영정밀","일월중량","엠에이치머시너리","미래코리아","모산모터","다모아텍","코리아머신","태일시스템","테슬론","정기섭","세미테크","남부","윤원테크","대한기계","진명산업","성우eng","장비특수중량","목수들의세상","디엔테크","베스트","화천서비스","이양연","이명섭","박완","서동정밀","남북","통일공작기계","와이제이티","대상","컴스그린에너지","네오테크","메카로","지개차"].sort((a,b)=>b.length-a.length);
+  return items.map(it => {
+    if (it.company) return it;
+    const desc = (it.desc||'').trim();
+    let company = '', content = desc;
+    for (const c of cos) {
+      if (desc.startsWith(c)) { company = c; content = desc.slice(c.length).trim(); break; }
+    }
+    if (!company) { const p = desc.split(' '); company = p[0]; content = p.slice(1).join(' '); }
+    return {...it, company, content};
+  });
+}
 
-    .split-item-row { display: flex; gap: 6px; align-items: center; }
-    .split-inp { padding: 8px 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 13px; background: #f9f9f9; color: #111; }
-    .split-inp:focus { outline: none; border-color: #C8981A; }
-  </style>
+window.startSync = function(cb) {
+  _DOC.onSnapshot((snap) => {
+    if (snap.exists) {
+      const d = snap.data();
+      cb({
+        misugeum: autoSplitCompany(JSON.parse(d.misugeum || '[]')),
+        jigeum: autoSplitCompany(JSON.parse(d.jigeum || '[]'))
+      });
+    }
+  });
+};
+</script>
 </head>
 <body>
-
-<!-- 카드 -->
-<div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-    <div style="flex:1;">
-      <div style="font-size:14px;font-weight:500;color:#111;margin-bottom:2px;" id="vName">문테크</div>
-      <div style="font-size:12px;color:#888;margin-bottom:6px;" id="vDesc">MYNX-750 2007년식 / 파워바이스4대 / BT50공구 3개</div>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        <span style="font-size:12px;color:#888;">5/13</span>
-        <span style="font-size:14px;font-weight:500;color:#C8981A;" id="vPrice">37,400,000원</span>
-        <span class="badge" style="background:#C8981A;color:#fff;display:none;" id="splitBadge">분할</span>
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-card">
+    <div class="lock-icon">🔐</div>
+    <div class="lock-title">수금대장</div>
+    <div class="lock-sub">비밀번호를 입력하세요</div>
+    <input class="lock-inp" type="password" id="lockInp" placeholder="••••••••••" onkeydown="if(event.key==='Enter')checkPw()">
+    <button class="lock-btn" onclick="checkPw()">확인</button>
+    <div class="lock-err" id="lockErr"></div>
+  </div>
+</div>
+<div class="app" id="mainApp" style="display:none">
+  <div class="header">
+    <div class="header-inner">
+      <div class="app-title">수금대장 2026</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <div class="header-date" id="todayDate"></div>
+        <button onclick="exportBackup()" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:11px;padding:4px 8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif">백업</button>
+        <label style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:11px;padding:4px 8px;cursor:pointer">복원<input type="file" accept=".json" onchange="importBackup(event)" style="display:none"></label>
+        <button onclick="logout()" style="background:none;border:1px solid #e0e0e0;border-radius:8px;color:#999;font-size:11px;padding:4px 8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif">로그아웃</button>
       </div>
     </div>
-    <button onclick="openModal()" style="background:transparent;border:none;cursor:pointer;color:#C8981A;padding:4px;font-size:18px;" aria-label="수정">✏️</button>
+    <div class="tabs" style="padding:12px 0 0">
+      <button class="tab active misugeum" onclick="setTab('misugeum')">미수금</button>
+      <button class="tab jigeum" onclick="setTab('jigeum')">지급금</button>
+      <button class="tab suyik" onclick="openSuyik()">수익</button>
+    </div>
   </div>
-  <!-- 분할 항목 (분할 켜졌을 때만 보임) -->
-  <div id="cardSplitArea" style="display:none;margin-top:10px;"></div>
+  <div class="summary">
+    <div class="stat"><div class="stat-label">전체 금액</div><div class="stat-val neutral" id="totalAmt">0원</div></div>
+    <div class="stat"><div class="stat-label">미완료 금액</div><div class="stat-val" id="pendingAmt">0원</div></div>
+  </div>
+  <div class="list-wrap">
+    <input class="search-box" type="text" id="searchBox" placeholder="🔍 업체명, 내용 검색..." oninput="render()">
+    <div class="month-filter-row" id="monthFilterRow"></div>
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="setFilter('all')">전체</button>
+      <button class="filter-btn" onclick="setFilter('pending')">미완료</button>
+      <button class="filter-btn" onclick="setFilter('done')">완료</button>
+      <button class="filter-btn" onclick="setFilter('taxpending')">계산서미발행</button>
+    </div>
+    <div class="list" id="listEl"></div>
+  </div>
+  <div class="input-area">
+    <div class="input-row">
+      <input class="inp" type="text" id="inpCompany" placeholder="업체명">
+    </div>
+    <div class="input-row">
+      <input class="inp" type="text" id="inpDesc" placeholder="내용">
+      <button id="splitToggleBtn" class="type-btn" onclick="toggleSplitMode()" style="width:70px;flex:none;font-size:11px">분할</button>
+    </div>
+    <div class="input-row">
+      <input class="inp inp-sm" type="text" inputmode="numeric" id="inpAmt" placeholder="금액" oninput="formatAmtInput(this)">
+      <input class="inp inp-date" type="text" id="inpDate" placeholder="날짜">
+      <button id="taxToggleBtn" class="tax-badge unissued" onclick="toggleTaxInput()" style="padding:10px 10px;font-size:11px">계산서선택</button>
+      <button class="btn-add" onclick="addItem()">추가</button>
+    </div>
+  </div>
 </div>
 
-<!-- 수정 모달 -->
-<div id="modal" class="overlay">
-  <div class="modal">
-    <div style="font-size:16px;font-weight:500;color:#111;margin-bottom:1.25rem;">내용 수정</div>
+<!-- 수정 팝업 (분할 기능 추가됨) -->
+<div class="edit-popup hidden" id="editPopup">
+  <div class="edit-popup-inner">
+    <div class="edit-popup-title">내용 수정</div>
+    <input class="edit-inp" type="text" id="editCompanyInp" placeholder="업체명">
+    <input class="edit-inp" type="text" id="editDescInp" placeholder="내용 입력">
+    <input class="edit-inp" type="text" inputmode="numeric" id="editAmtInp" placeholder="금액" oninput="formatAmtInput(this)">
 
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <input class="inp" id="mName" type="text" value="문테크" />
-      <input class="inp" id="mDesc" type="text" value="MYNX-750 2007년식 / 파워바이스4대 / BT50공구 3개" />
-      <input class="inp" id="mPrice" type="text" value="37,400,000" />
-    </div>
-
-    <!-- 분할 토글 -->
-    <div style="border-top:1px solid #f0f0f0;margin-top:1.25rem;padding-top:1rem;">
-      <div class="toggle-wrap">
+    <!-- 분할 섹션 -->
+    <div class="edit-split-section">
+      <div class="edit-split-toggle-row">
         <div>
-          <div style="font-size:14px;font-weight:500;color:#111;">분할</div>
-          <div style="font-size:12px;color:#888;margin-top:2px;">입금을 여러 건으로 나눠서 관리</div>
+          <div class="edit-split-label">분할</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">입금을 여러 건으로 나눠서 관리</div>
         </div>
-        <button class="toggle" id="splitToggle" onclick="toggleSplit()" aria-label="분할 토글"></button>
+        <button class="toggle-sw" id="editSplitToggle" onclick="toggleEditSplit()"></button>
       </div>
-
-      <!-- 분할 항목 입력 (토글 ON일 때만 보임) -->
-      <div id="splitSection" style="display:none;margin-top:10px;">
-        <div id="mSplitRows" style="display:flex;flex-direction:column;gap:8px;"></div>
-        <button onclick="addRow()" class="add-dashed">+ 항목 추가</button>
-        <div style="display:flex;justify-content:space-between;margin-top:10px;padding:8px 12px;border-radius:8px;background:#f9f9f9;">
-          <span style="font-size:13px;color:#888;">합계</span>
-          <span style="font-size:13px;font-weight:500;" id="mTotal">0원</span>
+      <div id="editSplitSection" style="display:none">
+        <div class="edit-split-rows" id="editSplitRows"></div>
+        <button class="edit-split-add" onclick="addEditSplitRow()">+ 항목 추가</button>
+        <div class="edit-split-total">
+          <span style="color:var(--text2)">합계</span>
+          <span id="editSplitTotal" style="font-weight:700">0원</span>
         </div>
       </div>
     </div>
 
-    <div style="display:flex;gap:10px;margin-top:1.25rem;">
-      <button class="btn-cancel" onclick="closeModal()">취소</button>
-      <button class="btn-confirm" onclick="save()">수정</button>
+    <div class="edit-btns" style="margin-top:14px">
+      <button class="edit-btn-cancel" onclick="closeEditPopup()">취소</button>
+      <button class="edit-btn-ok" onclick="confirmEdit()">수정</button>
     </div>
+  </div>
+</div>
+
+<div class="split-modal hidden" id="splitModal"><div class="split-modal-inner"><div class="split-modal-title">입금 추가</div><input class="split-inp" type="text" id="splitDescInp" placeholder="내용 (예: 계약금, 중도금, 잔금)"><input class="split-inp" type="text" inputmode="numeric" id="splitAmtInp" placeholder="금액" oninput="formatAmtInput(this)"><input class="split-inp" type="text" id="splitDateInp" placeholder="날짜 (예: 5/13)"><div class="split-btns"><button class="split-btn-cancel" onclick="closeSplitModal()">취소</button><button class="split-btn-ok" onclick="confirmSplit()">추가</button></div></div></div>
+<div class="toast" id="toast"></div>
+<div class="tax-popup hidden" id="taxPopup">
+  <div class="tax-popup-inner">
+    <div class="tax-popup-title">계산서 상태 선택</div>
+    <button class="tax-option opt-issued" onclick="selectTax('issued')">🟢 계산서발행</button>
+    <button class="tax-option opt-pending" onclick="selectTax('pending')">🟡 계산서미발행</button>
+    <button class="tax-option opt-none" onclick="selectTax('none')">⚫ 계산서없음</button>
+    <button class="tax-option-cancel" onclick="closeTaxPopup()">취소</button>
+  </div>
+</div>
+<div class="modal-overlay hidden" id="suyikModal">
+  <div class="modal">
+    <button class="back-btn" onclick="closeSuyik()">← 닫기</button>
+    <div id="suyikContent"></div>
   </div>
 </div>
 
 <script>
-  let TOTAL = 37400000;
-  let splitOn = false;
-  let splits = [];
+const STORAGE_KEY = 'soogeum_2026_v1';
 
-  function fmt(n) { return Math.round(n).toLocaleString(); }
-  function parseNum(s) { return parseInt((s + '').replace(/[^0-9]/g, '')) || 0; }
+const PRESET_MIS = [
+  {desc:"한국유니콤밸브 화천선반 2대 전기수리건",company:"한국유니콤밸브",content:"화천선반 2대 전기수리건",amt:715000,date:"1/7",done:true,tax:"issued"},
+  {desc:"동국실업 연마기 디지털모니터 교체건, 밀링 디지털모니터 교체건 중고",company:"동국실업",content:"연마기 디지털모니터 교체건, 밀링 디지털모니터 교체건 중고",amt:1397000,date:"1/27",done:true,tax:"issued"},
+  {desc:"지티에스 중고 hl380 (계약금 300,000 입금완료)",company:"지티에스",content:"중고 hl380 (계약금 300,000 입금완료)",amt:3300000,date:"1/4",done:true,tax:"issued"},
+  {desc:"진성테크 칩커버외 수평건",company:"진성테크",content:"칩커버외 수평건",amt:374000,date:"1/4",done:true,tax:"issued"},
+  {desc:"한울테크 중고 nsm-t (네이버수수료 246,048 차감)",company:"한울테크",content:"중고 nsm-t (네이버수수료 246,048 차감)",amt:6353952,date:"1/4",done:true,tax:"issued"},
+  {desc:"케이테크 동국실업 방전기수리건",company:"케이테크",content:"동국실업 방전기수리건",amt:330000,date:"1/7",done:true,tax:"none"},
+  {desc:"한국신광 hl380용 척커버 (1/14 입금예정)",company:"한국신광",content:"hl380용 척커버 (1/14 입금예정)",amt:583000,date:"1/9",done:true,tax:"issued"},
+  {desc:"제일이엔에스 선반2대,밀링2대 안전커버세트(전기포함)",company:"제일이엔에스",content:"선반2대,밀링2대 안전커버세트(전기포함)",amt:3702600,date:"1/12",done:true,tax:"issued"},
+  {desc:"유한기계 ymc-400 집진기",company:"유한기계",content:"ymc-400 집진기",amt:1749000,date:"1/12",done:true,tax:"issued"},
+  {desc:"디엔공작기계 vesta-1000 판매수수료 상록",company:"디엔공작기계",content:"vesta-1000 판매수수료 상록",amt:1100000,date:"1/14",done:true,tax:"issued"},
+  {desc:"제일이엔에스 안전커버 전기장치 4대",company:"제일이엔에스",content:"안전커버 전기장치 4대",amt:1320000,date:"1/15",done:true,tax:"issued"},
+  {desc:"제일이엔에스 안전커버 4대 설치건",company:"제일이엔에스",content:"안전커버 4대 설치건",amt:1980000,date:"1/15",done:true,tax:"issued"},
+  {desc:"경보엔지니어링 선반 메인스위치수리",company:"경보엔지니어링",content:"선반 메인스위치수리",amt:165000,date:"1/15",done:true,tax:"issued"},
+  {desc:"소울텍바이스 파워바이스 2대 반절",company:"소울텍바이스",content:"파워바이스 2대 반절",amt:1400000,date:"1/15",done:true,tax:"none"},
+  {desc:"한국유니콤밸브 밀링 퀼이송세트 교체",company:"한국유니콤밸브",content:"밀링 퀼이송세트 교체",amt:1752300,date:"1/21",done:true,tax:"issued"},
+  {desc:"코닝정밀소재 지그제작및 외경공구 (2월말 입금)",company:"코닝정밀소재",content:"지그제작및 외경공구 (2월말 입금)",amt:7700000,date:"1/22",done:true,tax:"issued"},
+  {desc:"코닝정밀소재 지그2차제작 및 공구제작",company:"코닝정밀소재",content:"지그2차제작 및 공구제작",amt:3300000,date:"2/13",done:true,tax:"issued"},
+  {desc:"대경툴 460용 와이퍼세트",company:"대경툴",content:"460용 와이퍼세트",amt:244200,date:"1/26",done:true,tax:"issued"},
+  {desc:"신용길 중고 hmv-f 밀링",company:"신용길",content:"중고 hmv-f 밀링",amt:2000000,date:"1/28",done:true,tax:"none"},
+  {desc:"정밀원테크 윤원테크 vesta-1000 구매 (계약금 3,500,000 입금완료, 잔금 3/20 입금예정)",company:"정밀원테크",content:"윤원테크 vesta-1000 구매 (계약금 3,500,000 입금완료, 잔금 3/20 입금예정)",amt:38500000,date:"1/30",done:true,tax:"issued"},
+  {desc:"신용정밀 마스터실린더 1개",company:"신용정밀",content:"마스터실린더 1개",amt:121000,date:"2/3",done:true,tax:"issued"},
+  {desc:"alt 칩버켓 제작 1개 + 운송비 50,000 (페이워크 카드결재)",company:"alt",content:"칩버켓 제작 1개 + 운송비 50,000 (페이워크 카드결재)",amt:624293,date:"2/5",done:true,tax:"issued"},
+  {desc:"화진 베드밀링수리 권기석",company:"화진",content:"베드밀링수리 권기석",amt:715000,date:"2/10",done:false,tax:"issued"},
+  {desc:"에이원인더스 nsl580x1500",company:"에이원인더스",content:"nsl580x1500",amt:5500000,date:"2/11",done:true,tax:"issued"},
+  {desc:"디떠블유 중고 cutex-160a (계약금 1,600,000 입금완료)",company:"디떠블유",content:"중고 cutex-160a (계약금 1,600,000 입금완료)",amt:17600000,date:"2/11",done:true,tax:"issued"},
+  {desc:"올트 마스터실린더+캘리퍼 (페이워크 카드결재)",company:"올트",content:"마스터실린더+캘리퍼 (페이워크 카드결재)",amt:334140,date:"2/12",done:true,tax:"issued"},
+  {desc:"주식회사 대덕R&P hl580용 공구대 아세이",company:"주식회사 대덕R&P",content:"hl580용 공구대 아세이",amt:2310000,date:"2/23",done:true,tax:"issued"},
+  {desc:"형제정밀 중고 hmt-1100 2001년식 (계약금 500,000 입금완료)",company:"형제정밀",content:"중고 hmt-1100 2001년식 (계약금 500,000 입금완료)",amt:5500000,date:"2/24",done:true,tax:"issued"},
+  {desc:"형제정밀 칩커버",company:"형제정밀",content:"칩커버",amt:169400,date:"2/24",done:true,tax:"issued"},
+  {desc:"만텍 신용길 칩통 1개",company:"만텍",content:"신용길 칩통 1개",amt:350000,date:"2/27",done:true,tax:"none"},
+  {desc:"대광지관 화천밀링 수리건",company:"대광지관",content:"화천밀링 수리건",amt:440000,date:"3/5",done:true,tax:"issued"},
+  {desc:"이봉은 칩버켓 1대 제작건 페이워크카드결재",company:"이봉은",content:"칩버켓 1대 제작건 페이워크카드결재",amt:911290,date:"3/6",done:true,tax:"issued"},
+  {desc:"머신툴 vx650 판매수수료 (3/13일 입금예정)",company:"머신툴",content:"vx650 판매수수료 (3/13일 입금예정)",amt:1100000,date:"3/9",done:true,tax:"issued"},
+  {desc:"차세대기전 580용 심압대 스크류너트 1개",company:"차세대기전",content:"580용 심압대 스크류너트 1개",amt:401500,date:"3/9",done:true,tax:"issued"},
+  {desc:"세일이엔지 중고 sirius-550 05년식 (계약금 3,000,000 입금완료)",company:"세일이엔지",content:"중고 sirius-550 05년식 (계약금 3,000,000 입금완료)",amt:23650000,date:"3/10",done:true,tax:"issued"},
+  {desc:"대구화천 양기영 중고선반 판매수수료",company:"대구화천",content:"양기영 중고선반 판매수수료",amt:770000,date:"3/11",done:true,tax:"issued"},
+  {desc:"사하금형 사이클펌프 1개",company:"사하금형",content:"사이클펌프 1개",amt:220000,date:"3/11",done:true,tax:"issued"},
+  {desc:"대구화천 대여금",company:"대구화천",content:"대여금",amt:4380000,date:"3/11",done:true,tax:"issued"},
+  {desc:"대웅 모임비용",company:"대웅",content:"모임비용",amt:218000,date:"3/11",done:true,tax:"issued"},
+  {desc:"대산에이피 브레이크뭉치 1개",company:"대산에이피",content:"브레이크뭉치 1개",amt:217800,date:"3/12",done:true,tax:"issued"},
+  {desc:"유한자동차부품 sc-230, sc-190",company:"유한자동차부품",content:"sc-230, sc-190",amt:1460000,date:"3/13",done:true,tax:"none"},
+  {desc:"대림eng 중고 집진기 2대",company:"대림eng",content:"중고 집진기 2대",amt:1100000,date:"3/13",done:true,tax:"issued"},
+  {desc:"충무정밀 밀링 날개 1개",company:"충무정밀",content:"밀링 날개 1개",amt:217800,date:"3/16",done:true,tax:"issued"},
+  {desc:"삼에스기계 hl580용 전후이송스크류너트 1세트 (취소 환불)",company:"삼에스기계",content:"hl580용 전후이송스크류너트 1세트 (취소 환불)",amt:836000,date:"3/18",done:true,tax:"issued"},
+  {desc:"전대흥 연마바이스 2개",company:"전대흥",content:"연마바이스 2개",amt:150000,date:"3/21",done:true,tax:"none"},
+  {desc:"케이비오토텍 hl580 안전커버세트(전기제외) 2대 설치건",company:"케이비오토텍",content:"hl580 안전커버세트(전기제외) 2대 설치건",amt:3410000,date:"3/23",done:false,tax:"issued"},
+  {desc:"엠엠피아이 절삭용 공구 TIP",company:"엠엠피아이",content:"절삭용 공구 TIP",amt:1760000,date:"3/23",done:false,tax:"pending"},
+  {desc:"정우금속 마스터실린더1개",company:"정우금속",content:"마스터실린더1개",amt:110000,date:"3/23",done:true,tax:"none"},
+  {desc:"allt 칩버켓제작 2대 페이워크카드결재",company:"allt",content:"칩버켓제작 2대 페이워크카드결재",amt:1258448,date:"3/26",done:true,tax:"issued"},
+  {desc:"경보엔지니어링 선반 마스터실린더 교체",company:"경보엔지니어링",content:"선반 마스터실린더 교체",amt:353100,date:"3/26",done:true,tax:"issued"},
+  {desc:"엠엠피아이 척핸들",company:"엠엠피아이",content:"척핸들",amt:148500,date:"3/27",done:false,tax:"pending"},
+  {desc:"경보엔지니어링 중고 SC-273 척 디에이툴",company:"경보엔지니어링",content:"중고 SC-273 척 디에이툴",amt:330000,date:"4/2",done:true,tax:"issued"},
+  {desc:"엠엠피아이 지그",company:"엠엠피아이",content:"지그",amt:4400000,date:"4/2",done:false,tax:"pending"},
+  {desc:"아성 선반전기수리 아현전기",company:"아성",content:"선반전기수리 아현전기",amt:330000,date:"4/3",done:false,tax:"issued"},
+  {desc:"엠이엔지 지트 mynx-5400 2011년식 판매 (계약금 2,600,000 입금완료)",company:"엠이엔지",content:"지트 mynx-5400 2011년식 판매 (계약금 2,600,000 입금완료)",amt:28600000,date:"4/7",done:true,tax:"issued"},
+  {desc:"건명특수기계 공장 hl460x1500 2014년식 판매 (계약금 4,000,000 입금완료)",company:"건명특수기계",content:"공장 hl460x1500 2014년식 판매 (계약금 4,000,000 입금완료)",amt:15400000,date:"4/7",done:true,tax:"issued"},
+  {desc:"우리화스텍 캘리퍼 1개",company:"우리화스텍",content:"캘리퍼 1개",amt:217800,date:"4/8",done:true,tax:"issued"},
+  {desc:"최석진 공장 한신콤프레샤 20마력 세트",company:"최석진",content:"공장 한신콤프레샤 20마력 세트",amt:2300000,date:"4/10",done:true,tax:"pending"},
+  {desc:"비제이코리아 nsl580, hmv-f 판매 (계약금 1,300,000 입금완료)",company:"비제이코리아",content:"nsl580, hmv-f 판매 (계약금 1,300,000 입금완료)",amt:14300000,date:"4/10",done:true,tax:"issued"},
+  {desc:"해왕 각인기",company:"해왕",content:"각인기",amt:2350000,date:"4/14",done:true,tax:"none"},
+  {desc:"썬라이즈 습식다운트랜스 50kva 1대",company:"썬라이즈",content:"습식다운트랜스 50kva 1대",amt:660000,date:"4/18",done:true,tax:"issued"},
+  {desc:"성진eng 마스터실린더, 브레이크패드",company:"성진eng",content:"마스터실린더, 브레이크패드",amt:203500,date:"4/18",done:true,tax:"issued"},
+  {desc:"키츠코리아 hl580용 오버사이즈방진구 롤러타입 1개",company:"키츠코리아",content:"hl580용 오버사이즈방진구 롤러타입 1개",amt:1457500,date:"4/20",done:true,tax:"issued"},
+  {desc:"효산 하이로우기어 수리",company:"효산",content:"하이로우기어 수리",amt:275000,date:"4/20",done:true,tax:"issued"},
+  {desc:"남양공업 브레이크라이닝 1세트",company:"남양공업",content:"브레이크라이닝 1세트",amt:181500,date:"4/20",done:true,tax:"issued"},
+];
 
-  function openModal() {
-    document.getElementById('mName').value = document.getElementById('vName').textContent;
-    document.getElementById('mDesc').value = document.getElementById('vDesc').textContent;
-    document.getElementById('mPrice').value = fmt(TOTAL);
-    renderModalRows();
-    document.getElementById('modal').classList.add('open');
-  }
-  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+let tab = 'misugeum', filter = 'all', monthFilter = 'all', monthSel = 'all';
 
-  function toggleSplit() {
-    splitOn = !splitOn;
-    const btn = document.getElementById('splitToggle');
-    const sec = document.getElementById('splitSection');
-    btn.classList.toggle('on', splitOn);
-    sec.style.display = splitOn ? 'block' : 'none';
-    if (splitOn && splits.length === 0) {
-      splits.push({ label: '계약금', date: '', amount: 0 });
-      splits.push({ label: '잔금', date: '', amount: 0 });
-      renderModalRows();
-    }
-  }
+const PRESET = [
+  {desc:"동아지게차 nsm-t 출고도비",company:"동아지게차",content:"nsm-t 출고도비",amt:100000,date:"1/5",done:true,tax:"issued"},
+  {desc:"아현전기 유니콤밸브 마그네트교체",company:"아현전기",content:"유니콤밸브 마그네트교체",amt:220000,date:"1/7",done:true,tax:"issued"},
+  {desc:"상록 지티에스 hl380판매금 반절",company:"상록",content:"지티에스 hl380판매금 반절",amt:1022000,date:"1/10",done:true,tax:"none"},
+  {desc:"yhb 유한기계 ymc-400",company:"yhb",content:"유한기계 ymc-400",amt:1419000,date:"1/12",done:true,tax:"issued"},
+  {desc:"세바 한국신광 hl380용 척커버 1개",company:"세바",content:"한국신광 hl380용 척커버 1개",amt:326700,date:"1/12",done:true,tax:"issued"},
+  {desc:"태양정밀조명 작업등3m 1개",company:"태양정밀조명",content:"작업등3m 1개",amt:57200,date:"1/14",done:true,tax:"issued"},
+  {desc:"디엔공작기계 파워바이스 2대 반절",company:"디엔공작기계",content:"파워바이스 2대 반절",amt:770000,date:"1/15",done:true,tax:"none"},
+  {desc:"화천상공사 한국유니콤밸브 밀링수리부품",company:"화천상공사",content:"한국유니콤밸브 밀링수리부품",amt:459800,date:"1/19",done:true,tax:"issued"},
+  {desc:"정보이엔지 한국유니콤밸브 밀링수리건",company:"정보이엔지",content:"한국유니콤밸브 밀링수리건",amt:440000,date:"1/21",done:true,tax:"issued"},
+  {desc:"올인테크 코닝정밀소재 지그및 공구제작건 (1/31 입금예정)",company:"올인테크",content:"코닝정밀소재 지그및 공구제작건 (1/31 입금예정)",amt:6253830,date:"1/22",done:true,tax:"issued"},
+  {desc:"세바 제일이엔에스 안전커버 4세트 (2,000,000 입금완료)",company:"세바",content:"제일이엔에스 안전커버 4세트 (2,000,000 입금완료)",amt:3128400,date:"1/22",done:true,tax:"issued"},
+  {desc:"정보이엔지 제일이엔에스 안전커버 4세트 설치",company:"정보이엔지",content:"제일이엔에스 안전커버 4세트 설치",amt:660000,date:"1/28",done:true,tax:"issued"},
+  {desc:"아현전기 제일이엔에스 안전커버 3세트 전기장치 설치",company:"아현전기",content:"제일이엔에스 안전커버 3세트 전기장치 설치",amt:440000,date:"1/28",done:true,tax:"issued"},
+  {desc:"화천상공사 대경툴 와이퍼세트",company:"화천상공사",content:"대경툴 와이퍼세트",amt:91300,date:"1/26",done:true,tax:"issued"},
+  {desc:"태양정밀조명 작업등 3m 1개",company:"태양정밀조명",content:"작업등 3m 1개",amt:57200,date:"1/28",done:true,tax:"issued"},
+  {desc:"남부 신용길 중고 hmv-f",company:"남부",content:"신용길 중고 hmv-f",amt:1100000,date:"1/29",done:true,tax:"issued"},
+  {desc:"태양정밀조명 작업등 3m 1개",company:"태양정밀조명",content:"작업등 3m 1개",amt:57200,date:"1/29",done:true,tax:"issued"},
+  {desc:"위드비 슈나이더 미니폴더 외 2종",company:"위드비",content:"슈나이더 미니폴더 외 2종",amt:1437700,date:"1/29",done:true,tax:"issued"},
+  {desc:"윤원테크 정밀원테크 vesta-1000 / 공장 콤프,에어드라이,다운트랜스 (계약금 3,060,000 입금완료)",company:"윤원테크",content:"정밀원테크 vesta-1000 / 공장 콤프,에어드라이,다운트랜스 (계약금 3,060,000 입금완료)",amt:33660000,date:"1/30",done:true,tax:"issued"},
+  {desc:"화물비 중고 hmv-f 공장입고",company:"화물비",content:"중고 hmv-f 공장입고",amt:220000,date:"1/30",done:true,tax:"issued"},
+  {desc:"안산정공 선반 절삭유펌프",company:"안산정공",content:"선반 절삭유펌프",amt:132550,date:"2/1",done:true,tax:"issued"},
+  {desc:"태양정밀조명 작업등 3m 1개",company:"태양정밀조명",content:"작업등 3m 1개",amt:57200,date:"2/3",done:true,tax:"issued"},
+  {desc:"신일PMS alt 칩버켓 제작 1개 + 운송비 50,000",company:"신일PMS",content:"alt 칩버켓 제작 1개 + 운송비 50,000",amt:495000,date:"2/5",done:true,tax:"issued"},
+  {desc:"태양정밀조명 작업등 2m 1개",company:"태양정밀조명",content:"작업등 2m 1개",amt:57200,date:"2/3",done:true,tax:"issued"},
+  {desc:"권기석 화진 베드밀링 수리",company:"권기석",content:"화진 베드밀링 수리",amt:495000,date:"2/10",done:true,tax:"issued"},
+  {desc:"상록 nsl580x1500 수익금반절",company:"상록",content:"nsl580x1500 수익금반절",amt:1722000,date:"2/11",done:true,tax:"none"},
+  {desc:"신화툴링 코닝정밀소재 4본연동척",company:"신화툴링",content:"코닝정밀소재 4본연동척",amt:169400,date:"2/13",done:true,tax:"issued"},
+  {desc:"올인테크 지그2차제작 및 공구제작",company:"올인테크",content:"지그2차제작 및 공구제작",amt:1100000,date:"2/13",done:true,tax:"issued"},
+  {desc:"세바 주식회사 대덕R&P hl580용 공구대아세이",company:"세바",content:"주식회사 대덕R&P hl580용 공구대아세이",amt:1650000,date:"2/23",done:true,tax:"issued"},
+  {desc:"세바 엑스카베이터 hl580 오버사이즈 방진구",company:"세바",content:"엑스카베이터 hl580 오버사이즈 방진구",amt:968000,date:"2/23",done:true,tax:"issued"},
+  {desc:"박성동 만텍 신용길 칩통 1개",company:"박성동",content:"만텍 신용길 칩통 1개",amt:250000,date:"2/27",done:true,tax:"none"},
+  {desc:"박성동 중고 cutex-160a 2013년식 공장매입",company:"박성동",content:"중고 cutex-160a 2013년식 공장매입",amt:14850000,date:"2/27",done:true,tax:"issued"},
+  {desc:"화물비 cutex-160a 공장입고",company:"화물비",content:"cutex-160a 공장입고",amt:275000,date:"2/28",done:true,tax:"issued"},
+  {desc:"영주테크 공구제작",company:"영주테크",content:"공구제작",amt:60000,date:"3/3",done:true,tax:"none"},
+  {desc:"에이원인더스 nsl580x1500 1998년식",company:"에이원인더스",content:"nsl580x1500 1998년식",amt:3850000,date:"3/5",done:true,tax:"issued"},
+  {desc:"정보이엔지 대광지관 화천밀링수리건",company:"정보이엔지",content:"대광지관 화천밀링수리건",amt:330000,date:"3/5",done:true,tax:"issued"},
+  {desc:"신일PMS 이봉은 칩버켓 1대 제작건 1200x600x700",company:"신일PMS",content:"이봉은 칩버켓 1대 제작건 1200x600x700",amt:539000,date:"3/6",done:true,tax:"issued"},
+  {desc:"길공구 코닝 팁및 절삭공구",company:"길공구",content:"코닝 팁및 절삭공구",amt:352000,date:"3/9",done:true,tax:"issued"},
+  {desc:"화천상공사 아산산업자재 심압대 스크류너트 1개",company:"화천상공사",content:"아산산업자재 심압대 스크류너트 1개",amt:291500,date:"3/9",done:true,tax:"issued"},
+  {desc:"머신툴 세일이엔지 중고 sirius-550 (계약금 1,300,000 입금완료)",company:"머신툴",content:"세일이엔지 중고 sirius-550 (계약금 1,300,000 입금완료)",amt:14300000,date:"3/11",done:true,tax:"issued"},
+  {desc:"세인트 세일이엔지 sirius-550 판매수수료",company:"세인트",content:"세일이엔지 sirius-550 판매수수료",amt:4950000,date:"3/11",done:true,tax:"issued"},
+  {desc:"안산정공 사하금형 사이클펌프 1개",company:"안산정공",content:"사하금형 사이클펌프 1개",amt:145970,date:"3/11",done:true,tax:"issued"},
+  {desc:"대구화천 대여금",company:"대구화천",content:"대여금",amt:4380000,date:"3/11",done:true,tax:"issued"},
+  {desc:"머신툴 sirius-550 lm교체 지원비",company:"머신툴",content:"sirius-550 lm교체 지원비",amt:500000,date:"3/16",done:true,tax:"none"},
+  {desc:"주식회사 지트 mynx-5400 2011년식 (계약금 2,200,000 입금완료)",company:"주식회사 지트",content:"mynx-5400 2011년식 (계약금 2,200,000 입금완료)",amt:24200000,date:"3/13",done:true,tax:"issued"},
+  {desc:"화천상공사 충무정밀 밀링 테이블 날개 1개",company:"화천상공사",content:"충무정밀 밀링 테이블 날개 1개",amt:132000,date:"3/13",done:true,tax:"issued"},
+  {desc:"올인테크 코닝정밀소재 지그제작 2차",company:"올인테크",content:"코닝정밀소재 지그제작 2차",amt:1100000,date:"3/17",done:true,tax:"issued"},
+  {desc:"안산정공 밀링 절삭유펌프 100F 1개",company:"안산정공",content:"밀링 절삭유펌프 100F 1개",amt:125180,date:"3/19",done:true,tax:"issued"},
+  {desc:"세바 hl580용 안전커버(전기제외) 2세트, 명판8개",company:"세바",content:"hl580용 안전커버(전기제외) 2세트, 명판8개",amt:1793000,date:"3/20",done:true,tax:"issued"},
+  {desc:"화천상공사 절삭유판 1개",company:"화천상공사",content:"절삭유판 1개",amt:142000,date:"3/20",done:true,tax:"issued"},
+  {desc:"디엔공작기계 연마바이스 2개분 수익금반절",company:"디엔공작기계",content:"연마바이스 2개분 수익금반절",amt:50000,date:"3/21",done:true,tax:"none"},
+  {desc:"화물비 공장 콤프,트랜스,드라이 입고",company:"화물비",content:"공장 콤프,트랜스,드라이 입고",amt:132000,date:"3/22",done:true,tax:"issued"},
+  {desc:"툴젠 공장 hl460x1500 2014년 입고",company:"툴젠",content:"공장 hl460x1500 2014년 입고",amt:9350000,date:"3/23",done:true,tax:"issued"},
+  {desc:"화물비 공장 hl460x1500 입고",company:"화물비",content:"공장 hl460x1500 입고",amt:165000,date:"3/23",done:true,tax:"issued"},
+  {desc:"정보이엔지 케이비오토텍 hl580 안전커버세트 2대설치",company:"정보이엔지",content:"케이비오토텍 hl580 안전커버세트 2대설치",amt:440000,date:"3/23",done:true,tax:"issued"},
+  {desc:"동산제닉스 hl460x1500 중고디지털설치",company:"동산제닉스",content:"hl460x1500 중고디지털설치",amt:660000,date:"3/25",done:true,tax:"issued"},
+  {desc:"신일PMS allt 칩버켓 제작 2대",company:"신일PMS",content:"allt 칩버켓 제작 2대",amt:660000,date:"3/26",done:true,tax:"issued"},
+  {desc:"신화툴링 유한자동차 + 코닝정밀소재 척외",company:"신화툴링",content:"유한자동차 + 코닝정밀소재 척외",amt:1640100,date:"3/31",done:true,tax:"issued"},
+  {desc:"디에이툴 경보엔지니어링 중고 sc-273척",company:"디에이툴",content:"경보엔지니어링 중고 sc-273척",amt:220000,date:"4/2",done:true,tax:"issued"},
+  {desc:"세바 공장 hl460 기어4종",company:"세바",content:"공장 hl460 기어4종",amt:564300,date:"4/3",done:true,tax:"issued"},
+  {desc:"정보이엔지 공장 hl460 수리",company:"정보이엔지",content:"공장 hl460 수리",amt:330000,date:"4/3",done:true,tax:"issued"},
+  {desc:"아현전기 아성 선반전기수리",company:"아현전기",content:"아성 선반전기수리",amt:198000,date:"4/3",done:true,tax:"issued"},
+  {desc:"태양정밀조명 작업등5m",company:"태양정밀조명",content:"작업등5m",amt:57200,date:"4/6",done:true,tax:"issued"},
+  {desc:"신일PMS 운송비 칩버켓 2대",company:"신일PMS",content:"운송비 칩버켓 2대",amt:66000,date:"4/7",done:true,tax:"issued"},
+  {desc:"엠이엔지 남선,화천 밀링 2대 매입 (계약금 600,000 입금완료)",company:"엠이엔지",content:"남선,화천 밀링 2대 매입 (계약금 600,000 입금완료)",amt:3300000,date:"4/8",done:true,tax:"issued"},
+  {desc:"세바 마스터실린더 15개, 브레이크뭉치 6개, 캠스위치 2개, 공구대스크류너트 1개",company:"세바",content:"마스터실린더 15개, 브레이크뭉치 6개, 캠스위치 2개, 공구대스크류너트 1개",amt:1828750,date:"4/9",done:true,tax:"issued"},
+  {desc:"에이치엠씨 비제이코리아 판매수수료",company:"에이치엠씨",content:"비제이코리아 판매수수료",amt:1100000,date:"4/10",done:true,tax:"issued"},
+  {desc:"일산공작기계 비제이코리아 hmv-f (계약금 340,000 입금완료)",company:"일산공작기계",content:"비제이코리아 hmv-f (계약금 340,000 입금완료)",amt:3740000,date:"4/10",done:true,tax:"issued"},
+  {desc:"윤신재 각인기",company:"윤신재",content:"각인기",amt:1300000,date:"4/4",done:true,tax:"none"},
+  {desc:"삼월중량 화물 엠이엔지 밀링2대 공장입고",company:"삼월중량 화물",content:"엠이엔지 밀링2대 공장입고",amt:132000,date:"4/14",done:true,tax:"issued"},
+  {desc:"세바 이현제 hl460용 오버사이즈방진구 1개",company:"세바",content:"이현제 hl460용 오버사이즈방진구 1개",amt:715000,date:"4/14",done:true,tax:"issued"},
+  {desc:"화천상공사 건명특수기계 50T 체인지기어 1개",company:"화천상공사",content:"건명특수기계 50T 체인지기어 1개",amt:78500,date:"4/15",done:true,tax:"issued"},
+  {desc:"와이에이치비클리너 밀양공업 yoc-350 1대",company:"와이에이치비클리너",content:"밀양공업 yoc-350 1대",amt:1386000,date:"4/16",done:true,tax:"issued"},
+  {desc:"위드비 슈나이더미니폴더 1대 + 운송비",company:"위드비",content:"슈나이더미니폴더 1대 + 운송비",amt:1146200,date:"4/20",done:false,tax:"issued"},
+];
 
-  function renderModalRows() {
-    const cont = document.getElementById('mSplitRows');
-    cont.innerHTML = '';
-    splits.forEach((s, i) => {
-      const div = document.createElement('div');
-      div.className = 'split-item-row';
-      div.innerHTML = `
-        <input class="split-inp" type="text" value="${s.label}" placeholder="항목명" style="flex:2;" oninput="splits[${i}].label=this.value" />
-        <input class="split-inp" type="text" value="${s.date}" placeholder="날짜" style="flex:1.2;" oninput="splits[${i}].date=this.value" />
-        <input class="split-inp" type="text" value="${s.amount ? fmt(s.amount) : ''}" placeholder="금액" style="flex:2;" oninput="splits[${i}].amount=parseNum(this.value);updateTotal()" />
-        <button onclick="removeRow(${i})" style="background:transparent;border:none;cursor:pointer;color:#999;font-size:16px;padding:4px;">✕</button>
-      `;
-      cont.appendChild(div);
-    });
-    updateTotal();
-  }
+let data = { misugeum: [], jigeum: [] };
 
-  function addRow() {
-    splits.push({ label: '', date: '', amount: 0 });
-    renderModalRows();
-  }
-  function removeRow(i) {
-    splits.splice(i, 1);
-    renderModalRows();
-  }
-  function updateTotal() {
-    const sum = splits.reduce((a, s) => a + s.amount, 0);
-    const el = document.getElementById('mTotal');
-    el.textContent = fmt(sum) + '원';
-    el.style.color = sum === TOTAL ? '#2C9E6E' : sum > TOTAL ? '#E24B4A' : '#111';
-  }
+function today() {
+  const d = new Date();
+  return d.getFullYear() + '년 ' + (d.getMonth()+1) + '월 ' + d.getDate() + '일';
+}
+document.getElementById('todayDate').textContent = today();
 
-  function save() {
-    document.getElementById('vName').textContent = document.getElementById('mName').value;
-    document.getElementById('vDesc').textContent = document.getElementById('mDesc').value;
-    TOTAL = parseNum(document.getElementById('mPrice').value);
-    document.getElementById('vPrice').textContent = fmt(TOTAL) + '원';
-
-    // 분할 배지
-    document.getElementById('splitBadge').style.display = splitOn ? 'inline-block' : 'none';
-
-    // 카드에 분할 항목 표시
-    const area = document.getElementById('cardSplitArea');
-    if (splitOn && splits.length > 0) {
-      area.style.display = 'block';
-      let html = '';
-      splits.forEach(s => {
-        html += `<div class="split-row-card">
-          <input type="radio" name="r" style="accent-color:#C8981A;width:16px;height:16px;flex-shrink:0;" />
-          <span style="flex:1;font-size:13px;color:#888;">${s.label}${s.date ? ' (' + s.date + ')' : ''}</span>
-          <span style="font-size:13px;font-weight:500;color:#C8981A;">${fmt(s.amount)}원</span>
-        </div>`;
-      });
-      const paid = splits.reduce((a, s) => a + s.amount, 0);
-      const rem = TOTAL - paid;
-      html += `<div style="display:flex;justify-content:space-between;padding:10px 0 0;">
-        <span style="font-size:13px;font-weight:500;color:#111;">잔여금액</span>
-        <span style="font-size:13px;font-weight:500;color:${rem <= 0 ? '#2C9E6E' : '#E24B4A'};">${fmt(rem)}원</span>
-      </div>`;
-      area.innerHTML = html;
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.misugeum && parsed.misugeum.length > 0) data.misugeum = parsed.misugeum;
+      else data.misugeum = PRESET_MIS.map((it,i) => ({...it, id: i+1}));
+      if (parsed.jigeum && parsed.jigeum.length > 0) data.jigeum = parsed.jigeum;
+      else data.jigeum = PRESET.map((it,i) => ({...it, id: i+1}));
     } else {
-      area.style.display = 'none';
-      area.innerHTML = '';
+      data.misugeum = PRESET_MIS.map((it,i) => ({...it, id: i+1}));
+      data.jigeum = PRESET.map((it,i) => ({...it, id: i+1}));
     }
-
-    closeModal();
+  } catch(e) {
+    data.misugeum = PRESET_MIS.map((it,i) => ({...it, id: i+1}));
+    data.jigeum = PRESET.map((it,i) => ({...it, id: i+1}));
   }
+  render();
+  setTodayDate();
+  checkYearRollover();
+  setTimeout(async () => {
+    try {
+      const cloudData = await window.loadFromCloud();
+      if (cloudData && (cloudData.misugeum.length > 0 || cloudData.jigeum.length > 0)) {
+        data = cloudData;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        render();
+        toast('☁️ 동기화 완료!');
+      }
+    } catch(e) {}
+    window.startSync((cloudData) => {
+      data = cloudData;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      render();
+      toast('☁️ 업데이트됨!');
+    });
+  }, 1000);
+}
+
+function exportBackup() {
+  const ARCHIVE_KEY = 'soogeum_archive';
+  let archive = [];
+  try { archive = JSON.parse(localStorage.getItem(ARCHIVE_KEY)||'[]'); } catch(e) {}
+  const backup = { version: 1, exportedAt: new Date().toISOString(), current: data, archive: archive };
+  const json = JSON.stringify(backup, null, 2);
+  const encrypted = CryptoJS.AES.encrypt(json, '5143').toString();
+  const encWrapper = JSON.stringify({encrypted: true, data: encrypted});
+  const blob = new Blob([encWrapper], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const d = new Date();
+  const fileName = '수금대장_백업_' + d.getFullYear() + ('0'+(d.getMonth()+1)).slice(-2) + ('0'+d.getDate()).slice(-2) + '.json';
+  const a = document.createElement('a');
+  a.href = url; a.download = fileName; a.click();
+  URL.revokeObjectURL(url);
+  const dateStr = d.getFullYear() + '년 ' + (d.getMonth()+1) + '월 ' + d.getDate() + '일';
+  const subject = encodeURIComponent('수금대장 백업 ' + dateStr);
+  const body = encodeURIComponent('수금대장 백업 파일입니다. (' + dateStr + ')\n\n미수금 항목: ' + (data.misugeum ? data.misugeum.length : 0) + '개\n지급금 항목: ' + (data.jigeum ? data.jigeum.length : 0) + '개\n\n※ 방금 저장된 백업 파일(' + fileName + ')을 이 메일에 첨부해서 보내주세요.');
+  setTimeout(() => { window.location.href = 'mailto:mohoro@naver.com?subject=' + subject + '&body=' + body; }, 500);
+  toast('백업 저장 + 메일 앱 열렸어요!');
+}
+
+function importBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!confirm('현재 데이터를 백업 파일로 덮어씁니다. 계속할까요?')) { event.target.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let parsed = JSON.parse(e.target.result);
+      if (parsed.encrypted) {
+        const pw = prompt('백업 파일 비밀번호를 입력하세요:');
+        if (!pw) return;
+        try {
+          const bytes = CryptoJS.AES.decrypt(parsed.data, pw);
+          const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+          if (!decrypted) { toast('비밀번호가 틀렸어요'); return; }
+          parsed = JSON.parse(decrypted);
+        } catch(err) { toast('비밀번호가 틀렸어요'); return; }
+      }
+      if (!parsed.current) { toast('올바른 백업 파일이 아니에요'); return; }
+      data = parsed.current;
+      if (parsed.archive) localStorage.setItem('soogeum_archive', JSON.stringify(parsed.archive));
+      save(); render(); toast('복원 완료!');
+    } catch(err) { toast('파일을 읽을 수 없어요'); }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function checkYearRollover() {
+  const ARCHIVE_KEY = 'soogeum_archive';
+  const appYear = 2026;
+  const curYear = new Date().getFullYear();
+  if (curYear <= appYear) return;
+  let archive = [];
+  try { archive = JSON.parse(localStorage.getItem(ARCHIVE_KEY)||'[]'); } catch(e) {}
+  const alreadyDone = archive.find(a => a.year === appYear);
+  if (alreadyDone) return;
+  const totalIncome = data.misugeum.filter(it=>it.done).reduce((s,it)=>s+Number(it.amt),0);
+  const totalExpense = data.jigeum.filter(it=>it.done).reduce((s,it)=>s+Number(it.amt),0);
+  archive.push({ year: appYear, totalIncome, totalExpense, misugeum: [...data.misugeum], jigeum: [...data.jigeum], archivedAt: new Date().toISOString() });
+  localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archive));
+  data = { misugeum: [], jigeum: [] };
+  save();
+  document.querySelector('.app-title').textContent = '수금대장 ' + curYear;
+  toast(appYear + '년 자동 백업 완료! ' + curYear + '년 장부 시작');
+}
+
+function setTodayDate() {
+  const d = new Date();
+  document.getElementById('inpDate').value = (d.getMonth()+1)+'/'+d.getDate();
+}
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+  if (window.saveToCloud) window.saveToCloud(data);
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+function fmt(n) { return Number(n).toLocaleString('ko-KR') + '원'; }
+
+function formatAmtInput(el) {
+  let raw = el.value.replace(/,/g, '').replace(/[^0-9]/g, '');
+  el.dataset.raw = raw;
+  if (raw) el.value = Number(raw).toLocaleString('ko-KR');
+  else el.value = '';
+}
+
+function setMonthSel(m) { monthSel = m; render(); }
+
+function setTab(t) {
+  tab = t;
+  document.querySelectorAll('.tab').forEach(el => {
+    el.classList.toggle('active', el.classList.contains(t));
+  });
+  monthSel = 'all';
+  if (document.getElementById('searchBox')) document.getElementById('searchBox').value = '';
+  render();
+}
+
+function setFilter(f) {
+  filter = f;
+  document.querySelectorAll('.filter-btn').forEach((el, i) => {
+    el.classList.toggle('active', ['all','pending','done','taxpending'][i] === f);
+  });
+  render();
+}
+
+function render() {
+  const items = [...data[tab]].sort((a,b) => {
+    const toNum = d => { const [m,day] = (d||'0/0').split('/'); return parseInt(m)*100+parseInt(day); };
+    const dateDiff = toNum(b.date) - toNum(a.date);
+    if (dateDiff !== 0) return dateDiff;
+    return (b.id || 0) - (a.id || 0);
+  });
+  const getMonth = (date) => {
+    if (!date) return null;
+    if (date.includes('-')) return date.slice(0,7);
+    const parts = date.split('/');
+    if (parts.length >= 1) return parts[0].padStart(2,'0') + '월';
+    return null;
+  };
+  const monthKeys = [...new Set(items.map(it => getMonth(it.date)).filter(Boolean))].sort((a,b) => parseInt(a)-parseInt(b));
+  const mfRow = document.getElementById('monthFilterRow');
+  if (mfRow) {
+    const allBtn = '<button class="month-btn'+(monthSel==='all'?' active':'')+'" onclick="setMonthSel(\'all\')">전체</button>';
+    const monthBtns = monthKeys.map(m => '<button class="month-btn'+(monthSel===m?' active':'')+'" onclick="setMonthSel(\''+m+'\')">'+m+'</button>').join('');
+    mfRow.innerHTML = allBtn + monthBtns;
+  }
+  const searchQ = (document.getElementById('searchBox')?.value || '').toLowerCase();
+  const filtered = items.filter(it => {
+    if (filter === 'done' && !it.done) return false;
+    if (filter === 'pending' && it.done) return false;
+    if (filter === 'taxpending' && it.tax !== 'pending') return false;
+    if (monthSel !== 'all') { const itMonth = getMonth(it.date); if (itMonth !== monthSel) return false; }
+    if (searchQ && !((it.company||'')+(it.content||it.desc||'')).toLowerCase().includes(searchQ)) return false;
+    return true;
+  });
+  const total = items.reduce((s, it) => s + Number(it.amt), 0);
+  const pending = items.filter(it => !it.done).reduce((s, it) => s + Number(it.amt), 0);
+  const cl = tab === 'misugeum' ? 'red' : 'green';
+  document.getElementById('totalAmt').textContent = fmt(total);
+  document.getElementById('pendingAmt').className = 'stat-val ' + cl;
+  document.getElementById('pendingAmt').textContent = fmt(pending);
+  const el = document.getElementById('listEl');
+  if (!filtered.length) { el.innerHTML = '<div class="empty">항목이 없습니다</div>'; return; }
+  const ck = tab === 'misugeum' ? 'mis' : 'ji';
+  const taxMap = {issued:{cls:'issued',lbl:'계산서발행'}, pending:{cls:'pending',lbl:'계산서미발행'}, none:{cls:'none',lbl:'계산서없음'}};
+  el.innerHTML = filtered.map(it => {
+    const ri = data[tab].findIndex(x => x.id === it.id);
+    const taxInfo = taxMap[it.tax] || taxMap['pending'];
+    const paidAmt = it.splits ? it.splits.reduce((s,sp)=>s+Number(sp.amt),0) : 0;
+    const remainAmt = it.amt - paidAmt;
+    const splitHtml = it.isSplit ? `<div class="split-detail">${(it.splits||[]).map(sp=>`<div class="split-row"><span class="split-row-label">${sp.desc}${sp.date?' ('+sp.date+')':''}</span><span class="split-row-amt">${fmt(sp.amt)}</span></div>`).join('')}<div class="split-remain"><span>잔여금액</span><span style="color:${remainAmt<=0?'#1a8a4a':'#d63030'}">${remainAmt<=0?'✅ 완납':fmt(remainAmt)}</span></div><button class="split-add-btn" onclick="openSplitModal(${ri})">+ 입금 추가</button></div>` : '';
+    return `<div class="item${it.done?' done':''}"><div class="check${it.done?' checked '+ck:''}" onclick="toggle(${ri})"></div><div class="item-body">${it.company?`<div class="item-company">${it.company}</div>`:""}<div class="item-desc" onclick="editDesc(${ri})" style="cursor:pointer">${it.content||it.desc}</div><div class="item-meta">${it.date?`<span class="item-date">${it.date}</span>`:''}<span class="item-amt ${cl}">${fmt(it.amt)}</span>${it.isSplit?'<span class="split-badge">분할</span>':''}<button class="tax-badge ${taxInfo.cls}" onclick="toggleTax(${ri})">${taxInfo.lbl}</button></div>${splitHtml}</div><div style="display:flex;flex-direction:column;gap:4px;align-items:center;flex-shrink:0"><button class="item-del" onclick="editDesc(${ri})" title="수정">✏️</button><button class="item-del" onclick="del(${ri})">×</button></div></div>`;
+  }).join('');
+}
+
+function addItem() {
+  const desc = document.getElementById('inpDesc').value.trim();
+  const amt = document.getElementById('inpAmt').value.replace(/,/g, '').trim();
+  const date = document.getElementById('inpDate').value.trim();
+  if (!desc || !amt) { toast('내용과 금액을 입력해주세요'); return; }
+  const company = document.getElementById('inpCompany').value.trim();
+  data[tab].unshift({ desc: company ? company + ' ' + desc : desc, company, content: desc, amt: Number(amt), date, done: false, tax: taxState, isSplit: splitMode, splits: [], id: Date.now() });
+  save(); render();
+  document.getElementById('inpCompany').value = '';
+  document.getElementById('inpDesc').value = '';
+  document.getElementById('inpAmt').value = '';
+  document.getElementById('inpAmt').dataset.raw = '';
+  setTodayDate();
+  toast('추가됐어요!');
+}
+
+let taxState = 'pending'; let taxSelected = false;
+const taxBtnMap = {issued:{cls:'issued',lbl:'계산서발행'}, pending:{cls:'pending',lbl:'계산서미발행'}, none:{cls:'none',lbl:'계산서없음'}};
+function toggleTaxInput() { document.getElementById('taxPopup').classList.remove('hidden'); }
+function closeTaxPopup() { document.getElementById('taxPopup').classList.add('hidden'); }
+
+let editingTaxIdx = null;
+function toggleTax(i) { editingTaxIdx = i; document.getElementById('taxPopup').classList.remove('hidden'); }
+function selectTax(val) {
+  if (editingTaxIdx !== null) {
+    data[tab][editingTaxIdx].tax = val;
+    save(); render();
+    editingTaxIdx = null;
+  } else {
+    taxState = val; taxSelected = true;
+    const btn = document.getElementById('taxToggleBtn');
+    btn.textContent = taxBtnMap[val].lbl;
+    btn.className = 'tax-badge ' + taxBtnMap[val].cls;
+    btn.style.padding = '10px 10px'; btn.style.fontSize = '11px';
+  }
+  closeTaxPopup();
+}
+
+let splitMode = false;
+function toggleSplitMode() {
+  splitMode = !splitMode;
+  const btn = document.getElementById('splitToggleBtn');
+  if (splitMode) { btn.style.background='#fff3cd'; btn.style.color='#856404'; btn.textContent='분할✓'; }
+  else { btn.style.background=''; btn.style.color=''; btn.textContent='분할'; }
+}
+
+let splitTargetIdx = null;
+function openSplitModal(i) {
+  splitTargetIdx = i;
+  document.getElementById('splitDescInp').value = '';
+  document.getElementById('splitAmtInp').value = '';
+  const d = new Date();
+  document.getElementById('splitDateInp').value = (d.getMonth()+1)+'/'+d.getDate();
+  document.getElementById('splitModal').classList.remove('hidden');
+}
+function closeSplitModal() { splitTargetIdx = null; document.getElementById('splitModal').classList.add('hidden'); }
+function confirmSplit() {
+  if (splitTargetIdx === null) return;
+  const desc = document.getElementById('splitDescInp').value.trim() || '입금';
+  const amt = Number(document.getElementById('splitAmtInp').value.replace(/,/g,''));
+  const date = document.getElementById('splitDateInp').value.trim();
+  if (!amt) { toast('금액을 입력해주세요'); return; }
+  if (!data[tab][splitTargetIdx].splits) data[tab][splitTargetIdx].splits = [];
+  data[tab][splitTargetIdx].splits.push({ desc, amt, date, id: Date.now() });
+  const total = data[tab][splitTargetIdx].amt;
+  const paid = data[tab][splitTargetIdx].splits.reduce((s,sp)=>s+Number(sp.amt),0);
+  if (paid >= total) data[tab][splitTargetIdx].done = true;
+  save(); render(); closeSplitModal(); toast('입금 추가됐어요!');
+}
+
+// ==================== 수정 팝업 분할 기능 ====================
+let editingIdx = null;
+let editSplitOn = false;
+let editSplitItems = [];
+
+function editDesc(i) {
+  const pw = prompt('수정 비밀번호:');
+  if (pw === null) return;
+  if (pw !== '5143') { toast('비밀번호가 틀렸어요'); return; }
+  editingIdx = i;
+  const it = data[tab][i];
+  document.getElementById('editCompanyInp').value = it.company || '';
+  document.getElementById('editDescInp').value = it.content || it.desc || '';
+  const amtInp = document.getElementById('editAmtInp');
+  amtInp.value = it.amt ? it.amt.toLocaleString('ko-KR') : '';
+
+  // 분할 상태 불러오기
+  editSplitOn = it.isSplit || false;
+  editSplitItems = it.splits ? JSON.parse(JSON.stringify(it.splits)) : [];
+  if (editSplitOn && editSplitItems.length === 0) {
+    editSplitItems = [{desc:'계약금', amt:0, date:''}, {desc:'잔금', amt:0, date:''}];
+  }
+
+  const toggleBtn = document.getElementById('editSplitToggle');
+  toggleBtn.classList.toggle('on', editSplitOn);
+  document.getElementById('editSplitSection').style.display = editSplitOn ? 'block' : 'none';
+  renderEditSplitRows();
+  document.getElementById('editPopup').classList.remove('hidden');
+}
+
+function toggleEditSplit() {
+  editSplitOn = !editSplitOn;
+  const toggleBtn = document.getElementById('editSplitToggle');
+  toggleBtn.classList.toggle('on', editSplitOn);
+  const sec = document.getElementById('editSplitSection');
+  sec.style.display = editSplitOn ? 'block' : 'none';
+  if (editSplitOn && editSplitItems.length === 0) {
+    editSplitItems = [{desc:'계약금', amt:0, date:''}, {desc:'잔금', amt:0, date:''}];
+    renderEditSplitRows();
+  }
+}
+
+function renderEditSplitRows() {
+  const cont = document.getElementById('editSplitRows');
+  cont.innerHTML = '';
+  editSplitItems.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'edit-split-item';
+    div.innerHTML = `
+      <input type="text" value="${s.desc}" placeholder="항목명" style="flex:2;" oninput="editSplitItems[${i}].desc=this.value" />
+      <input type="text" value="${s.date}" placeholder="날짜" style="flex:1.2;" oninput="editSplitItems[${i}].date=this.value" />
+      <input type="text" value="${s.amt ? Number(s.amt).toLocaleString('ko-KR') : ''}" placeholder="금액" style="flex:2;" oninput="editSplitItems[${i}].amt=Number(this.value.replace(/,/g,''));updateEditSplitTotal()" />
+      <button onclick="removeEditSplitRow(${i})" style="background:transparent;border:none;cursor:pointer;color:#aaa;font-size:16px;padding:4px;flex-shrink:0;">✕</button>
+    `;
+    cont.appendChild(div);
+  });
+  updateEditSplitTotal();
+}
+
+function addEditSplitRow() {
+  editSplitItems.push({desc:'', amt:0, date:''});
+  renderEditSplitRows();
+}
+
+function removeEditSplitRow(i) {
+  editSplitItems.splice(i, 1);
+  renderEditSplitRows();
+}
+
+function updateEditSplitTotal() {
+  const totalAmt = Number(document.getElementById('editAmtInp').value.replace(/,/g,'')) || 0;
+  const sum = editSplitItems.reduce((a, s) => a + Number(s.amt), 0);
+  const el = document.getElementById('editSplitTotal');
+  el.textContent = sum.toLocaleString('ko-KR') + '원';
+  el.style.color = sum === totalAmt ? '#1a8a4a' : sum > totalAmt ? '#d63030' : '#1a1a1a';
+}
+
+function closeEditPopup() {
+  editingIdx = null;
+  document.getElementById('editPopup').classList.add('hidden');
+}
+
+function confirmEdit() {
+  if (editingIdx === null) return;
+  const newDesc = document.getElementById('editDescInp').value.trim();
+  if (!newDesc) { toast('내용을 입력해주세요'); return; }
+  const newCompany = document.getElementById('editCompanyInp').value.trim();
+  const amtInp = document.getElementById('editAmtInp');
+  if (amtInp && amtInp.value.trim()) {
+    const newAmt = Number(amtInp.value.replace(/,/g,''));
+    if (!isNaN(newAmt) && newAmt > 0) data[tab][editingIdx].amt = newAmt;
+  }
+  data[tab][editingIdx].company = newCompany;
+  data[tab][editingIdx].content = newDesc;
+  data[tab][editingIdx].desc = newCompany ? newCompany + ' ' + newDesc : newDesc;
+
+  // 분할 저장
+  data[tab][editingIdx].isSplit = editSplitOn;
+  data[tab][editingIdx].splits = editSplitOn ? [...editSplitItems] : [];
+
+  // 분할 완납 체크
+  if (editSplitOn && editSplitItems.length > 0) {
+    const total = data[tab][editingIdx].amt;
+    const paid = editSplitItems.reduce((a,s)=>a+Number(s.amt),0);
+    if (paid >= total) data[tab][editingIdx].done = true;
+  }
+
+  save(); render();
+  closeEditPopup();
+  toast('수정됐어요!');
+}
+// ==================== 분할 기능 끝 ====================
+
+function toggle(i) { data[tab][i].done = !data[tab][i].done; save(); render(); }
+
+function del(i) {
+  const pw = prompt('삭제 비밀번호를 입력하세요:');
+  if (pw === null) return;
+  if (pw !== '5143') { toast('비밀번호가 틀렸어요'); return; }
+  if (!confirm('정말 삭제할까요?')) return;
+  data[tab].splice(i, 1);
+  save(); render();
+  toast('삭제됐어요');
+}
+
+document.getElementById('inpDate').addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
+
+function openSuyik() { document.getElementById('suyikModal').classList.remove('hidden'); renderSuyik(); }
+function closeSuyik() { document.getElementById('suyikModal').classList.add('hidden'); }
+
+function renderSuyik() {
+  const ARCHIVE_KEY = 'soogeum_archive';
+  const appYear = 2026;
+  const curYear = new Date().getFullYear();
+  const months = {};
+  for (let m = 1; m <= 12; m++) months[m] = {income: 0, expense: 0};
+  data.misugeum.filter(it => it.done).forEach(it => { const m = parseInt((it.date||'').split('/')[0]); if (m >= 1 && m <= 12) months[m].income += Number(it.amt); });
+  data.jigeum.filter(it => it.done).forEach(it => { const m = parseInt((it.date||'').split('/')[0]); if (m >= 1 && m <= 12) months[m].expense += Number(it.amt); });
+  const totalIncome = Object.values(months).reduce((s,v) => s+v.income, 0);
+  const totalExpense = Object.values(months).reduce((s,v) => s+v.expense, 0);
+  const totalProfit = totalIncome - totalExpense;
+  let archive = [];
+  try { archive = JSON.parse(localStorage.getItem(ARCHIVE_KEY)||'[]'); } catch(e) {}
+  const fmt2 = n => (n < 0 ? '-' : '') + Math.abs(n).toLocaleString('ko-KR') + '원';
+  const cls = n => n >= 0 ? 'pos' : 'neg';
+  const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const activeMonths = Object.entries(months).filter(([m,v]) => v.income > 0 || v.expense > 0);
+  let html = `<div class="year-card"><div class="year-title">${appYear}년 연간 순수익</div><div class="year-big ${cls(totalProfit)}">${fmt2(totalProfit)}</div><div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div style="font-size:11px;color:var(--text2)">총 미수금</div><div style="font-size:14px;font-weight:700;color:#4caf85">${totalIncome.toLocaleString('ko-KR')}원</div></div><div><div style="font-size:11px;color:var(--text2)">총 지급금</div><div style="font-size:14px;font-weight:700;color:#e05a4e">${totalExpense.toLocaleString('ko-KR')}원</div></div></div></div><div style="font-size:12px;color:var(--text2);margin-bottom:8px">월별 내역 (완료 기준)</div>`;
+  activeMonths.forEach(([m, v]) => {
+    const profit = v.income - v.expense;
+    html += `<div class="month-card"><div class="month-label">${monthNames[m-1]}</div><div class="month-row"><span class="label">미수금</span><span class="val pos">+${v.income.toLocaleString('ko-KR')}원</span></div><div class="month-row"><span class="label">지급금</span><span class="val neg">-${v.expense.toLocaleString('ko-KR')}원</span></div><div class="month-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px"><span class="label" style="font-weight:500;color:var(--text)">순수익</span><span class="val ${cls(profit)}" style="font-size:14px">${fmt2(profit)}</span></div></div>`;
+  });
+  if (curYear > appYear) {
+    const alreadyArchived = archive.find(a => a.year === appYear);
+    if (!alreadyArchived) html += `<button class="archive-btn" onclick="archiveYear(${appYear})">📦 ${appYear}년 데이터 보관하고 ${curYear}년으로 전환</button>`;
+  }
+  if (archive.length > 0) {
+    html += `<div class="archive-section"><div class="archive-title">보관된 연도</div>`;
+    archive.forEach(a => { const p = a.totalIncome - a.totalExpense; html += `<div class="archive-item" onclick="showArchive(${a.year})"><div class="archive-item-label">${a.year}년</div><div class="archive-item-val ${cls(p)}">${fmt2(p)}</div></div>`; });
+    html += `</div>`;
+  }
+  document.getElementById('suyikContent').innerHTML = html;
+}
+
+function archiveYear(year) {
+  if (!confirm(year + '년 데이터를 보관하고 새 장부를 시작할까요?')) return;
+  const ARCHIVE_KEY = 'soogeum_archive';
+  let archive = [];
+  try { archive = JSON.parse(localStorage.getItem(ARCHIVE_KEY)||'[]'); } catch(e) {}
+  const totalIncome = data.misugeum.filter(it=>it.done).reduce((s,it)=>s+Number(it.amt),0);
+  const totalExpense = data.jigeum.filter(it=>it.done).reduce((s,it)=>s+Number(it.amt),0);
+  archive.push({ year, totalIncome, totalExpense, misugeum: data.misugeum, jigeum: data.jigeum, archivedAt: new Date().toISOString() });
+  localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archive));
+  data = { misugeum: [], jigeum: [] };
+  save();
+  document.querySelector('.app-title').textContent = '수금대장 ' + (year+1);
+  renderSuyik();
+  toast((year+1) + '년 장부로 전환됐어요!');
+}
+
+function showArchive(year) {
+  const ARCHIVE_KEY = 'soogeum_archive';
+  let archive = [];
+  try { archive = JSON.parse(localStorage.getItem(ARCHIVE_KEY)||'[]'); } catch(e) {}
+  const a = archive.find(x => x.year === year);
+  if (!a) return;
+  const fmt2 = n => (n<0?'-':'') + Math.abs(n).toLocaleString('ko-KR') + '원';
+  const cls = n => n >= 0 ? 'pos' : 'neg';
+  const months = {};
+  for (let m=1;m<=12;m++) months[m]={income:0,expense:0};
+  a.misugeum.filter(it=>it.done).forEach(it=>{const m=parseInt((it.date||'').split('/')[0]);if(m>=1&&m<=12)months[m].income+=Number(it.amt);});
+  a.jigeum.filter(it=>it.done).forEach(it=>{const m=parseInt((it.date||'').split('/')[0]);if(m>=1&&m<=12)months[m].expense+=Number(it.amt);});
+  const monthNames=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const profit = a.totalIncome - a.totalExpense;
+  let html = `<button class="back-btn" onclick="renderSuyik()">← 돌아가기</button><div class="year-card"><div class="year-title">${year}년 연간 순수익 (보관됨)</div><div class="year-big ${cls(profit)}">${fmt2(profit)}</div><div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div style="font-size:11px;color:var(--text2)">총 미수금</div><div style="font-size:14px;font-weight:700;color:#4caf85">${a.totalIncome.toLocaleString('ko-KR')}원</div></div><div><div style="font-size:11px;color:var(--text2)">총 지급금</div><div style="font-size:14px;font-weight:700;color:#e05a4e">${a.totalExpense.toLocaleString('ko-KR')}원</div></div></div></div><div style="font-size:12px;color:var(--text2);margin-bottom:8px">월별 내역</div>`;
+  Object.entries(months).filter(([m,v])=>v.income>0||v.expense>0).forEach(([m,v])=>{
+    const p = v.income-v.expense;
+    html += `<div class="month-card"><div class="month-label">${monthNames[m-1]}</div><div class="month-row"><span class="label">미수금</span><span class="val pos">+${v.income.toLocaleString('ko-KR')}원</span></div><div class="month-row"><span class="label">지급금</span><span class="val neg">-${v.expense.toLocaleString('ko-KR')}원</span></div><div class="month-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px"><span class="label" style="font-weight:500;color:var(--text)">순수익</span><span class="val ${cls(p)}" style="font-size:14px">${fmt2(p)}</span></div></div>`;
+  });
+  document.getElementById('suyikContent').innerHTML = html;
+}
+
+load();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+
+const PW_KEY = 'soogeum_auth';
+const CORRECT_PW = 'moonh5143862#';
+
+function logout() {
+  if (!confirm('로그아웃 하시겠어요?')) return;
+  localStorage.removeItem(PW_KEY);
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('lockScreen').classList.remove('hidden');
+  document.getElementById('lockInp').value = '';
+  document.getElementById('lockErr').textContent = '';
+  document.getElementById('lockInp').focus();
+}
+
+function checkPw() {
+  const pw = document.getElementById('lockInp').value;
+  if (pw === CORRECT_PW) {
+    localStorage.setItem(PW_KEY, btoa(CORRECT_PW));
+    document.getElementById('lockScreen').classList.add('hidden');
+    document.getElementById('mainApp').style.display = 'flex';
+    load();
+  } else {
+    document.getElementById('lockErr').textContent = '비밀번호가 틀렸어요 ❌';
+    document.getElementById('lockInp').value = '';
+    document.getElementById('lockInp').focus();
+  }
+}
+
+function initAuth() {
+  const saved = localStorage.getItem(PW_KEY);
+  if (saved && saved === btoa(CORRECT_PW)) {
+    document.getElementById('lockScreen').classList.add('hidden');
+    document.getElementById('mainApp').style.display = 'flex';
+    load();
+  } else {
+    document.getElementById('lockInp').focus();
+  }
+}
+
+initAuth();
 </script>
 </body>
 </html>
