@@ -297,26 +297,20 @@ window.startSync = function(cb) {
     <input class="edit-inp" type="text" id="editDescInp" placeholder="내용 입력">
     <input class="edit-inp" type="text" inputmode="numeric" id="editAmtInp" placeholder="금액" oninput="formatAmtInput(this)">
 
-    <!-- 분할 섹션 -->
-    <div class="edit-split-section">
-      <div class="edit-split-toggle-row">
-        <div>
-          <div class="edit-split-label">분할</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px">입금을 여러 건으로 나눠서 관리</div>
-        </div>
-        <button class="toggle-sw" id="editSplitToggle" onclick="toggleEditSplit()"></button>
-      </div>
-      <div id="editSplitSection" style="display:none">
-        <div class="edit-split-rows" id="editSplitRows"></div>
-        <button class="edit-split-add" onclick="addEditSplitRow()">+ 항목 추가</button>
-        <div class="edit-split-total">
-          <span style="color:var(--text2)">합계</span>
-          <span id="editSplitTotal" style="font-weight:700">0원</span>
-        </div>
+    <!-- 분할 버튼 (입력부와 동일한 스타일) -->
+    <div style="margin-bottom:10px">
+      <button id="editSplitToggle" onclick="toggleEditSplit()" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">분할</button>
+    </div>
+    <div id="editSplitSection" style="display:none;margin-bottom:10px;">
+      <div class="edit-split-rows" id="editSplitRows"></div>
+      <button class="edit-split-add" onclick="addEditSplitRow()">+ 항목 추가</button>
+      <div class="edit-split-total">
+        <span style="color:var(--text2)">합계</span>
+        <span id="editSplitTotal" style="font-weight:700">0원</span>
       </div>
     </div>
 
-    <div class="edit-btns" style="margin-top:14px">
+    <div class="edit-btns">
       <button class="edit-btn-cancel" onclick="closeEditPopup()">취소</button>
       <button class="edit-btn-ok" onclick="confirmEdit()">수정</button>
     </div>
@@ -796,8 +790,12 @@ function editDesc(i) {
     editSplitItems = [{desc:'계약금', amt:0, date:''}, {desc:'잔금', amt:0, date:''}];
   }
 
-  const toggleBtn = document.getElementById('editSplitToggle');
-  toggleBtn.classList.toggle('on', editSplitOn);
+  const btn = document.getElementById('editSplitToggle');
+  if (editSplitOn) {
+    btn.style.background='#fff3cd'; btn.style.color='#856404'; btn.style.borderColor='#ffc107'; btn.textContent='분할✓';
+  } else {
+    btn.style.background=''; btn.style.color=''; btn.style.borderColor=''; btn.textContent='분할';
+  }
   document.getElementById('editSplitSection').style.display = editSplitOn ? 'block' : 'none';
   renderEditSplitRows();
   document.getElementById('editPopup').classList.remove('hidden');
@@ -805,13 +803,18 @@ function editDesc(i) {
 
 function toggleEditSplit() {
   editSplitOn = !editSplitOn;
-  const toggleBtn = document.getElementById('editSplitToggle');
-  toggleBtn.classList.toggle('on', editSplitOn);
+  const btn = document.getElementById('editSplitToggle');
   const sec = document.getElementById('editSplitSection');
-  sec.style.display = editSplitOn ? 'block' : 'none';
-  if (editSplitOn && editSplitItems.length === 0) {
-    editSplitItems = [{desc:'계약금', amt:0, date:''}, {desc:'잔금', amt:0, date:''}];
+  if (editSplitOn) {
+    btn.style.background='#fff3cd'; btn.style.color='#856404'; btn.style.borderColor='#ffc107'; btn.textContent='분할✓';
+    sec.style.display = 'block';
+    if (editSplitItems.length === 0) {
+      editSplitItems = [{desc:'계약금', amt:0, date:''}, {desc:'잔금', amt:0, date:''}];
+    }
     renderEditSplitRows();
+  } else {
+    btn.style.background=''; btn.style.color=''; btn.style.borderColor=''; btn.textContent='분할';
+    sec.style.display = 'none';
   }
 }
 
