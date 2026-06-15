@@ -508,10 +508,8 @@ function importSettle(event, platform){
 
       if(toAdd.length === 0){
         let msg = '추가할 새 항목이 없어요.';
-        if(skippedDup.length > 0) msg += '
-('+skippedDup.length+'건은 이미 등록됨)';
-        if(skippedEtc.length > 0) msg += '
-('+skippedEtc.length+'건은 미완료/마이너스)';
+        if(skippedDup.length > 0) msg += ' ('+skippedDup.length+'건은 이미 등록됨)';
+        if(skippedEtc.length > 0) msg += ' ('+skippedEtc.length+'건은 미완료/마이너스)';
         toast(msg);
         return;
       }
