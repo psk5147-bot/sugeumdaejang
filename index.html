@@ -562,8 +562,9 @@ async function importSettle(event, platform){
           // 현재 연도 정산분만
           if(!settleDate.startsWith(String(curYear))){ return; }
 
-          // 최근 정산일 추적
-          if(settleDate > lastSettleDate) lastSettleDate = settleDate;
+          // 최근 정산일 추적 (오늘 이전 날짜만)
+          const todayStr = new Date().toISOString().slice(0,10);
+          if(settleDate <= todayStr && settleDate > lastSettleDate) lastSettleDate = settleDate;
 
           const sale = Number(row['판매액'] || 0);         // 판매액 소계
           const fee = Number(row['판매수수료'] || 0);       // 판매수수료
