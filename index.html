@@ -597,6 +597,11 @@ async function importSettle(event, platform){
     }
 
     if(toAdd.length === 0){
+      // 추가할 게 없어도 날짜는 저장
+      const meta2 = getSettleMeta();
+      const today2 = new Date();
+      meta2[platform] = today2.getFullYear() + '년 ' + (today2.getMonth()+1) + '월 ' + today2.getDate() + '일까지';
+      saveSettleMeta(meta2);
       let msg = '추가할 새 항목이 없어요.';
       if(skippedDup > 0) msg += ' (' + skippedDup + '건 이미 등록됨)';
       if(skippedEtc > 0) msg += ' (' + skippedEtc + '건 미완료/해당연도외)';
@@ -610,6 +615,19 @@ async function importSettle(event, platform){
       const [bm, bd] = b.dateStr.split('/').map(Number);
       return (am*100+ad) - (bm*100+bd);
     });
+
+    // 파일에서 읽은 가장 최근 정산일을 마지막 업로드로 저장 (추가 여부와 무관)
+    {
+      const allItems = [...toAdd];
+      // 중복 스킵된 것들도 포함해서 파일 자체의 최신 날짜를 저장해야 하므로
+      // toAdd가 없어도 파일을 올린 사실 자체를 기록
+      const meta = getSettleMeta();
+      const curYear2 = new Date().getFullYear();
+      const today = new Date();
+      const todayStr = curYear2 + '년 ' + (today.getMonth()+1) + '월 ' + today.getDate() + '일까지';
+      meta[platform] = todayStr;
+      saveSettleMeta(meta);
+    }
 
     // 미리보기 팝업
     settlePending = toAdd;
