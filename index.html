@@ -149,7 +149,32 @@
   .edit-split-item input{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;background:var(--bg3);color:var(--text);min-width:0}
   .edit-split-add{width:100%;padding:8px;border:1px dashed #ccc;border-radius:8px;background:transparent;color:#888;font-size:12px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-bottom:8px}
   .edit-split-total{display:flex;justify-content:space-between;padding:8px 12px;border-radius:8px;background:var(--bg3);font-size:13px;margin-bottom:10px}
+  .settle-popup{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+  .settle-popup.hidden{display:none}
+  .settle-popup-inner{background:#fff;width:100%;max-width:480px;border-radius:16px 16px 0 0;padding:20px;padding-bottom:max(20px,env(safe-area-inset-bottom))}
+  .settle-popup-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px;text-align:center}
+  .settle-option{width:100%;padding:14px 18px;margin-bottom:10px;border-radius:12px;border:none;cursor:pointer;font-size:15px;font-weight:700;font-family:'Noto Sans KR',sans-serif;text-align:left;display:flex;align-items:center;gap:10px}
+  .settle-option.naver{background:#e8f5ee;color:#1a8a4a}
+  .settle-option.coupang{background:#fff0f0;color:#c00000}
+  .settle-option.gmarket{background:#e8f0ff;color:#2255cc}
+  .settle-option.disabled{opacity:0.4;cursor:not-allowed}
+  .settle-cancel{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:14px;font-family:'Noto Sans KR',sans-serif;color:var(--text2);margin-top:4px}
+  .settle-preview{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:250;display:flex;align-items:center;justify-content:center}
+  .settle-preview.hidden{display:none}
+  .settle-preview-inner{background:#fff;width:92%;max-width:460px;border-radius:16px;padding:20px;max-height:80vh;display:flex;flex-direction:column}
+  .settle-preview-title{font-size:15px;font-weight:700;margin-bottom:4px;color:var(--text)}
+  .settle-preview-sub{font-size:12px;color:var(--text2);margin-bottom:12px}
+  .settle-preview-list{flex:1;overflow-y:auto;border:1px solid var(--border);border-radius:10px;margin-bottom:14px}
+  .settle-preview-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px}
+  .settle-preview-item:last-child{border-bottom:none}
+  .settle-preview-name{font-weight:700;color:var(--text)}
+  .settle-preview-date{font-size:11px;color:var(--text3);margin-top:2px}
+  .settle-preview-amt{font-weight:700;color:#1a8a4a;white-space:nowrap;margin-left:10px}
+  .settle-preview-btns{display:flex;gap:8px}
+  .settle-preview-ok{flex:1;padding:12px;background:#1a8a4a;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+  .settle-preview-cancel{flex:1;padding:12px;background:var(--bg3);border:none;border-radius:10px;color:var(--text2);font-size:14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -183,6 +208,7 @@ window.startSync=function(cb){_DOC.onSnapshot((snap)=>{if(snap.exists){const d=s
         <div class="header-date" id="todayDate"></div>
         <button onclick="exportBackup()" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:11px;padding:4px 8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif">백업</button>
         <label style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:11px;padding:4px 8px;cursor:pointer">복원<input type="file" accept=".json" onchange="importBackup(event)" style="display:none"></label>
+        <button onclick="openSettlePopup()" style="background:none;border:1px solid #1a8a4a;border-radius:8px;color:#1a8a4a;font-size:11px;padding:4px 8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-weight:700">정산가져오기</button>
         <button onclick="logout()" style="background:none;border:1px solid #e0e0e0;border-radius:8px;color:#999;font-size:11px;padding:4px 8px;cursor:pointer;font-family:'Noto Sans KR',sans-serif">로그아웃</button>
       </div>
     </div>
@@ -250,6 +276,33 @@ window.startSync=function(cb){_DOC.onSnapshot((snap)=>{if(snap.exists){const d=s
     <button class="tax-option opt-pending" onclick="selectTax('pending')">🟡 계산서미발행</button>
     <button class="tax-option opt-none" onclick="selectTax('none')">⚫ 계산서없음</button>
     <button class="tax-option-cancel" onclick="closeTaxPopup()">취소</button>
+  </div>
+</div>
+<div class="settle-popup hidden" id="settlePopup">
+  <div class="settle-popup-inner">
+    <div class="settle-popup-title">정산 파일 가져오기</div>
+    <label class="settle-option naver">
+      🟢 네이버 스마트스토어
+      <input type="file" accept=".xlsx" onchange="importSettle(event,'naver')" style="display:none">
+    </label>
+    <label class="settle-option coupang disabled" onclick="toast('쿠팡은 준비중이에요');return false">
+      🔴 쿠팡 (준비중)
+    </label>
+    <label class="settle-option gmarket disabled" onclick="toast('지마켓은 준비중이에요');return false">
+      🔵 지마켓 (준비중)
+    </label>
+    <button class="settle-cancel" onclick="closeSettlePopup()">취소</button>
+  </div>
+</div>
+<div class="settle-preview hidden" id="settlePreview">
+  <div class="settle-preview-inner">
+    <div class="settle-preview-title" id="settlePreviewTitle"></div>
+    <div class="settle-preview-sub" id="settlePreviewSub"></div>
+    <div class="settle-preview-list" id="settlePreviewList"></div>
+    <div class="settle-preview-btns">
+      <button class="settle-preview-cancel" onclick="closeSettlePreview()">취소</button>
+      <button class="settle-preview-ok" id="settlePreviewOkBtn" onclick="confirmSettle()">추가하기</button>
+    </div>
   </div>
 </div>
 <div class="modal-overlay hidden" id="suyikModal">
@@ -376,6 +429,144 @@ function renderSuyik(){const ARCHIVE_KEY='soogeum_archive';const appYear=2026;co
 function archiveYear(year){if(!confirm(year+'년 데이터를 보관하고 새 장부를 시작할까요?'))return;const ARCHIVE_KEY='soogeum_archive';let archive=[];try{archive=JSON.parse(localStorage.getItem(ARCHIVE_KEY)||'[]');}catch(e){}const totalIncome=data.misugeum.filter(it=>it.done).reduce((s,it)=>s+Number(it.amt),0);const totalExpense=data.jigeum.filter(it=>it.done).reduce((s,it)=>s+Number(it.amt),0);archive.push({year,totalIncome,totalExpense,misugeum:data.misugeum,jigeum:data.jigeum,archivedAt:new Date().toISOString()});localStorage.setItem(ARCHIVE_KEY,JSON.stringify(archive));data={misugeum:[],jigeum:[]};save();document.querySelector('.app-title').textContent='수금대장 '+(year+1);renderSuyik();toast((year+1)+'년 장부로 전환됐어요!');}
 function showArchive(year){const ARCHIVE_KEY='soogeum_archive';let archive=[];try{archive=JSON.parse(localStorage.getItem(ARCHIVE_KEY)||'[]');}catch(e){}const a=archive.find(x=>x.year===year);if(!a)return;const fmt2=n=>(n<0?'-':'')+Math.abs(n).toLocaleString('ko-KR')+'원';const cls=n=>n>=0?'pos':'neg';const months={};for(let m=1;m<=12;m++)months[m]={income:0,expense:0};a.misugeum.filter(it=>it.done).forEach(it=>{const m=parseInt((it.date||'').split('/')[0]);if(m>=1&&m<=12)months[m].income+=Number(it.amt);});a.jigeum.filter(it=>it.done).forEach(it=>{const m=parseInt((it.date||'').split('/')[0]);if(m>=1&&m<=12)months[m].expense+=Number(it.amt);});const monthNames=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];const profit=a.totalIncome-a.totalExpense;let html=`<button class="back-btn" onclick="renderSuyik()">← 돌아가기</button><div class="year-card"><div class="year-title">${year}년 연간 순수익 (보관됨)</div><div class="year-big ${cls(profit)}">${fmt2(profit)}</div><div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><div style="font-size:11px;color:var(--text2)">총 미수금</div><div style="font-size:14px;font-weight:700;color:#4caf85">${a.totalIncome.toLocaleString('ko-KR')}원</div></div><div><div style="font-size:11px;color:var(--text2)">총 지급금</div><div style="font-size:14px;font-weight:700;color:#e05a4e">${a.totalExpense.toLocaleString('ko-KR')}원</div></div></div></div><div style="font-size:12px;color:var(--text2);margin-bottom:8px">월별 내역</div>`;Object.entries(months).filter(([m,v])=>v.income>0||v.expense>0).forEach(([m,v])=>{const p=v.income-v.expense;html+=`<div class="month-card"><div class="month-label">${monthNames[m-1]}</div><div class="month-row"><span class="label">미수금</span><span class="val pos">+${v.income.toLocaleString('ko-KR')}원</span></div><div class="month-row"><span class="label">지급금</span><span class="val neg">-${v.expense.toLocaleString('ko-KR')}원</span></div><div class="month-row" style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px"><span class="label" style="font-weight:500;color:var(--text)">순수익</span><span class="val ${cls(p)}" style="font-size:14px">${fmt2(p)}</span></div></div>`;});document.getElementById('suyikContent').innerHTML=html;}
 load();
+
+// ===== 정산 가져오기 =====
+let settlePending = []; // 확인 대기중인 항목들
+
+function openSettlePopup(){
+  document.getElementById('settlePopup').classList.remove('hidden');
+}
+function closeSettlePopup(){
+  document.getElementById('settlePopup').classList.add('hidden');
+}
+function closeSettlePreview(){
+  document.getElementById('settlePreview').classList.add('hidden');
+  settlePending = [];
+}
+
+function importSettle(event, platform){
+  closeSettlePopup();
+  const file = event.target.files[0];
+  event.target.value = '';
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+
+      // 기존 등록된 네이버 주문번호 목록 (중복방지)
+      const existingNos = new Set(
+        data.misugeum
+          .filter(it => it.naverOrderNo)
+          .map(it => it.naverOrderNo)
+      );
+
+      const toAdd = [];
+      const skippedDup = [];
+      const skippedEtc = [];
+
+      rows.forEach(row => {
+        const orderNo = String(row['상품주문번호'] || '').trim();
+        if(!orderNo) return;
+
+        // 정산완료일 없으면 스킵 (미완료)
+        const completedDate = String(row['정산완료일'] || '').trim();
+        if(!completedDate) { skippedEtc.push(orderNo); return; }
+
+        // 금액 계산 (정산기준금액 + Npay수수료 + 매출연동수수료)
+        const base = Number(row['정산기준금액(A)'] || 0);
+        const npay = Number(row['Npay 수수료(B)'] || 0);
+        const sales = Number(row['매출연동 수수료 합계(C)'] || 0);
+        const amt = base + npay + sales;
+        if(amt <= 0) { skippedEtc.push(orderNo); return; }
+
+        // 중복 체크
+        if(existingNos.has(orderNo)) { skippedDup.push(orderNo); return; }
+
+        // 날짜 파싱 (2026.01.06 → 1/6)
+        const parts = completedDate.replace(/\./g, '-').split('-');
+        const dateStr = parseInt(parts[1]) + '/' + parseInt(parts[2]);
+
+        // 구매자명, 상품명
+        const name = String(row['구매자명'] || '').trim();
+        const product = String(row['상품명'] || '스마트스토어 정산').trim();
+        // 상품명이 너무 길면 줄임
+        const shortProduct = product.length > 25 ? product.slice(0, 25) + '…' : product;
+
+        toAdd.push({
+          orderNo,
+          name,
+          dateStr,
+          amt,
+          product: shortProduct,
+          platform
+        });
+      });
+
+      if(toAdd.length === 0){
+        let msg = '추가할 새 항목이 없어요.';
+        if(skippedDup.length > 0) msg += '
+('+skippedDup.length+'건은 이미 등록됨)';
+        if(skippedEtc.length > 0) msg += '
+('+skippedEtc.length+'건은 미완료/마이너스)';
+        toast(msg);
+        return;
+      }
+
+      // 미리보기 팝업 표시
+      settlePending = toAdd;
+      const dupMsg = skippedDup.length > 0 ? ' · 중복'+skippedDup.length+'건 스킵' : '';
+      const etcMsg = skippedEtc.length > 0 ? ' · 미완료'+skippedEtc.length+'건 스킵' : '';
+      document.getElementById('settlePreviewTitle').textContent = '총 '+toAdd.length+'건 추가 예정';
+      document.getElementById('settlePreviewSub').textContent = '아래 내용을 확인 후 추가하기를 눌러주세요.' + dupMsg + etcMsg;
+
+      const listEl = document.getElementById('settlePreviewList');
+      listEl.innerHTML = toAdd.map(r =>
+        '<div class="settle-preview-item">' +
+          '<div>' +
+            '<div class="settle-preview-name">[네이버] ' + r.name + '</div>' +
+            '<div class="settle-preview-date">' + r.dateStr + ' · ' + r.product + '</div>' +
+          '</div>' +
+          '<div class="settle-preview-amt">' + r.amt.toLocaleString('ko-KR') + '원</div>' +
+        '</div>'
+      ).join('');
+
+      document.getElementById('settlePreview').classList.remove('hidden');
+
+    } catch(err) {
+      console.error(err);
+      toast('파일을 읽을 수 없어요. 올바른 네이버 정산 파일인지 확인해주세요.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function confirmSettle(){
+  if(!settlePending.length) return;
+  settlePending.forEach(r => {
+    data.misugeum.unshift({
+      desc: '[네이버] ' + r.name + ' ' + r.product,
+      company: '[네이버] ' + r.name,
+      content: r.product,
+      amt: r.amt,
+      date: r.dateStr,
+      done: true,
+      tax: 'issued',
+      isSplit: false,
+      splits: [],
+      naverOrderNo: r.orderNo,
+      id: Date.now() + Math.random()
+    });
+  });
+  save();
+  render();
+  closeSettlePreview();
+  toast('✅ ' + settlePending.length + '건 추가됐어요!');
+  settlePending = [];
+}
 </script>
 <script>
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
