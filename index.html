@@ -295,8 +295,10 @@ window.startSync=function(cb){_DOC.onSnapshot((snap)=>{if(snap.exists){const d=s
       <span id="coupangLastUpload" style="font-size:11px;font-weight:400;color:#c00000;opacity:0.8"></span>
       <input type="file" accept=".xlsx" multiple onchange="importSettle(event,'coupang')" style="display:none">
     </label>
-    <label class="settle-option gmarket disabled" onclick="toast('지마켓은 준비중이에요');return false">
-      🔵 지마켓 (준비중)
+    <label class="settle-option gmarket" style="flex-direction:column;align-items:flex-start;gap:3px">
+      <span>🔵 지마켓</span>
+      <span id="gmarketLastUpload" style="font-size:11px;font-weight:400;color:#2255cc;opacity:0.8"></span>
+      <input type="file" accept=".xls,.xlsx" multiple onchange="importSettle(event,'gmarket')" style="display:none">
     </label>
     <button class="settle-cancel" onclick="closeSettlePopup()">취소</button>
   </div>
@@ -455,6 +457,8 @@ function openSettlePopup(){
   const coupangEl = document.getElementById('coupangLastUpload');
   if(naverEl) naverEl.textContent = meta.naver ? '마지막 업로드: ' + meta.naver : '아직 업로드 없음';
   if(coupangEl) coupangEl.textContent = meta.coupang ? '마지막 업로드: ' + meta.coupang : '아직 업로드 없음';
+  const gmarketEl = document.getElementById('gmarketLastUpload');
+  if(gmarketEl) gmarketEl.textContent = meta.gmarket ? '마지막 업로드: ' + meta.gmarket : '아직 업로드 없음';
   document.getElementById('settlePopup').classList.remove('hidden');
 }
 function closeSettlePopup(){
@@ -488,7 +492,7 @@ async function importSettle(event, platform){
   if(!files.length) return;
 
   const curYear = new Date().getFullYear();
-  const prefix = platform === 'naver' ? '[네이버]' : '[쿠팡]';
+  const prefix = platform === 'naver' ? '[네이버]' : platform === 'coupang' ? '[쿠팡]' : '[지마켓]';
 
   // 기존 등록된 주문번호 (중복방지)
   const existingNos = new Set(
@@ -654,6 +658,39 @@ async function importSettle(event, platform){
 
     document.getElementById('settlePreview').classList.remove('hidden');
 
+    } else if(platform === 'gmarket'){
+      // ===== 지마켓 파싱 =====
+      // 송금번호 기준 중복제거, 송금완료만, 현재연도만
+      for(const file of files){
+        const rows = await readXlsxFile(file);
+        rows.forEach(row => {
+          const no = String(row['송금번호'] || '').trim();
+          if(!no || no === 'undefined') return;
+
+          const sendDate = String(row['송금일'] || '').trim();
+          if(!sendDate.startsWith(String(curYear))){ skippedEtc++; return; }
+
+          const status = String(row['송금상태'] || '').trim();
+          if(status !== '송금완료'){ skippedEtc++; return; }
+
+          const amtStr = String(row['송금액'] || '0').replace(/,/g,'');
+          const amt = parseInt(amtStr) || 0;
+          if(amt <= 0){ skippedEtc++; return; }
+
+          if(existingNos.has(no)){ skippedDup++; return; }
+          existingNos.add(no);
+
+          // 최근 송금일 추적
+          if(sendDate > lastSettleDate) lastSettleDate = sendDate;
+
+          const parts = sendDate.split('-');
+          const dateStr = parseInt(parts[1]) + '/' + parseInt(parts[2]);
+
+          toAdd.push({ orderNo: no, name: '', dateStr, amt, product: '지마켓 정산', platform });
+        });
+      }
+    }
+
   } catch(err){
     console.error(err);
     toast('파일을 읽을 수 없어요. 올바른 정산 파일인지 확인해주세요.');
@@ -662,7 +699,7 @@ async function importSettle(event, platform){
 
 function confirmSettle(){
   if(!settlePending.length) return;
-  const prefix = settlePending[0].platform === 'naver' ? '[네이버]' : '[쿠팡]';
+  const platform2 = settlePending[0].platform; const prefix = platform2 === 'naver' ? '[네이버]' : platform2 === 'coupang' ? '[쿠팡]' : '[지마켓]';
   const orderField = settlePending[0].platform === 'naver' ? 'naverOrderNo' : 'naverOrderNo';
 
   // 마지막 정산일 계산 (가장 최근 날짜)
