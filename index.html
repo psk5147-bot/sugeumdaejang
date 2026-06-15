@@ -495,88 +495,59 @@ async function importSettle(event, platform){
   const curYear = new Date().getFullYear();
   const prefix = platform === 'naver' ? '[네이버]' : platform === 'coupang' ? '[쿠팡]' : '[지마켓]';
 
-  // 기존 등록된 주문번호 (중복방지)
   const existingNos = new Set(
-    data.misugeum
-      .filter(it => it.naverOrderNo)
-      .map(it => it.naverOrderNo)
+    data.misugeum.filter(it => it.naverOrderNo).map(it => it.naverOrderNo)
   );
 
   const toAdd = [];
   let skippedDup = 0;
   let skippedEtc = 0;
-  let lastSettleDate = ''; // 파일 내 가장 최근 정산완료일
+  let lastSettleDate = '';
 
   try {
     if(platform === 'naver'){
-      // ===== 네이버 파싱 =====
       for(const file of files){
         const rows = await readXlsxFile(file);
         rows.forEach(row => {
           const orderNo = String(row['상품주문번호'] || '').trim();
           if(!orderNo) return;
-
-          // 정산완료일 없으면 스킵
           const completedDate = String(row['정산완료일'] || '').trim();
           if(!completedDate){ skippedEtc++; return; }
-
-          // 현재 연도 정산분만
           if(!completedDate.startsWith(String(curYear))){ skippedEtc++; return; }
-
-          // 최근 정산완료일 추적
           if(completedDate > lastSettleDate) lastSettleDate = completedDate;
-
-          // 금액 계산
           const base = Number(row['정산기준금액(A)'] || 0);
           const npay = Number(row['Npay 수수료(B)'] || 0);
           const sales = Number(row['매출연동 수수료 합계(C)'] || 0);
           const amt = base + npay + sales;
           if(amt <= 0){ skippedEtc++; return; }
-
-          // 중복 체크
           if(existingNos.has(orderNo)){ skippedDup++; return; }
-          existingNos.add(orderNo); // 같은 배치 내 중복도 방지
-
-          // 날짜 파싱 (2026.01.06 → 1/6)
+          existingNos.add(orderNo);
           const parts = completedDate.replace(/\./g, '-').split('-');
           const dateStr = parseInt(parts[1]) + '/' + parseInt(parts[2]);
-
           const name = String(row['구매자명'] || '').trim();
           const product = String(row['상품명'] || '스마트스토어 정산').trim();
           const shortProduct = product.length > 25 ? product.slice(0, 25) + '…' : product;
-
           toAdd.push({ orderNo, name, dateStr, amt, product: shortProduct, platform });
         });
       }
 
     } else if(platform === 'coupang'){
-      // ===== 쿠팡 파싱 =====
-      // 주문번호(0번컬럼) 기준으로 파일별 합산 후 중복제거
-      const fileOrderMap = {}; // orderNo -> {name, amt, date, product}
-
+      const fileOrderMap = {};
       for(const file of files){
         const rows = await readXlsxFile(file);
         const fileOrders = {};
-
         rows.forEach(row => {
-          // 쿠팡은 헤더가 한글 컬럼명
           const orderNo = String(row['주문번호'] || '').split('.')[0].trim();
           if(!orderNo || orderNo === 'None' || orderNo === '') return;
-
           const settleDate = String(row['정산예정일'] || '').trim();
-          // 현재 연도 정산분만
           if(!settleDate.startsWith(String(curYear))){ return; }
-
-          // 최근 정산일 추적 (오늘 이전 날짜만)
           const todayStr = new Date().toISOString().slice(0,10);
           if(settleDate <= todayStr && settleDate > lastSettleDate) lastSettleDate = settleDate;
-
-          const sale = Number(row['판매액'] || 0);         // 판매액 소계
-          const fee = Number(row['판매수수료'] || 0);       // 판매수수료
-          const settleAmt = sale - Math.abs(fee);          // 정산대상액 = 판매액 - 수수료
+          const sale = Number(row['판매액'] || 0);
+          const fee = Number(row['판매수수료'] || 0);
+          const settleAmt = sale - Math.abs(fee);
           const name = String(row['구매자명'] || '').trim();
           const product = String(row['상품명'] || '').replace(/^"|"$/g,'').trim();
-
           if(!fileOrders[orderNo]){
             fileOrders[orderNo] = { name:'', amt:0, date:settleDate, product:'' };
           }
@@ -584,33 +555,44 @@ async function importSettle(event, platform){
           if(name && !fileOrders[orderNo].name) fileOrders[orderNo].name = name;
           if(product && !fileOrders[orderNo].product) fileOrders[orderNo].product = product;
         });
-
-        // 파일별 주문을 전체 맵에 머지 (파일간 중복은 첫 번째 파일 우선)
         Object.entries(fileOrders).forEach(([no, v]) => {
-          if(!fileOrderMap[no]){
-            fileOrderMap[no] = v;
-          } else {
-            // 같은 주문이 다른 파일에도 있으면 금액 합산하지 않고 스킵
-          }
+          if(!fileOrderMap[no]) fileOrderMap[no] = v;
         });
       }
-
-      // fileOrderMap → toAdd
       Object.entries(fileOrderMap).forEach(([orderNo, v]) => {
         if(v.amt <= 0){ skippedEtc++; return; }
         if(existingNos.has(orderNo)){ skippedDup++; return; }
         existingNos.add(orderNo);
-
         const parts = v.date.split('-');
         const dateStr = parseInt(parts[1]) + '/' + parseInt(parts[2]);
         const shortProduct = v.product.length > 25 ? v.product.slice(0,25) + '…' : v.product;
-
         toAdd.push({ orderNo, name: v.name, dateStr, amt: Math.round(v.amt), product: shortProduct, platform });
       });
+
+    } else if(platform === 'gmarket'){
+      for(const file of files){
+        const rows = await readXlsxFile(file);
+        rows.forEach(row => {
+          const no = String(row['송금번호'] || '').trim();
+          if(!no || no === 'undefined') return;
+          const sendDate = String(row['송금일'] || '').trim();
+          if(!sendDate.startsWith(String(curYear))){ skippedEtc++; return; }
+          const status = String(row['송금상태'] || '').trim();
+          if(status !== '송금완료'){ skippedEtc++; return; }
+          const amtStr = String(row['송금액'] || '0').replace(/,/g,'');
+          const amt = parseInt(amtStr) || 0;
+          if(amt <= 0){ skippedEtc++; return; }
+          if(existingNos.has(no)){ skippedDup++; return; }
+          existingNos.add(no);
+          if(sendDate > lastSettleDate) lastSettleDate = sendDate;
+          const parts = sendDate.split('-');
+          const dateStr = parseInt(parts[1]) + '/' + parseInt(parts[2]);
+          toAdd.push({ orderNo: no, name: '', dateStr, amt, product: '지마켓 정산', platform });
+        });
+      }
     }
 
     if(toAdd.length === 0){
-      // 추가할 게 없어도 날짜는 저장 (파일 내 최근 정산완료일 기준)
       if(lastSettleDate){
         const meta2 = getSettleMeta();
         const p = lastSettleDate.replace(/-/g,'.').split('.');
@@ -624,14 +606,12 @@ async function importSettle(event, platform){
       return;
     }
 
-    // 날짜순 정렬
     toAdd.sort((a, b) => {
       const [am, ad] = a.dateStr.split('/').map(Number);
       const [bm, bd] = b.dateStr.split('/').map(Number);
       return (am*100+ad) - (bm*100+bd);
     });
 
-    // 파일 내 최근 정산완료일을 마지막 업로드로 저장
     if(lastSettleDate){
       const meta = getSettleMeta();
       const p = lastSettleDate.replace(/-/g,'.').split('.');
@@ -639,13 +619,11 @@ async function importSettle(event, platform){
       saveSettleMeta(meta);
     }
 
-    // 미리보기 팝업
     settlePending = toAdd;
     const skipMsg = (skippedDup > 0 ? ' · 중복 ' + skippedDup + '건 스킵' : '') +
                     (skippedEtc > 0 ? ' · 제외 ' + skippedEtc + '건' : '');
     document.getElementById('settlePreviewTitle').textContent = prefix + ' 총 ' + toAdd.length + '건 추가 예정';
     document.getElementById('settlePreviewSub').textContent = '확인 후 추가하기를 눌러주세요.' + skipMsg;
-
     const listEl = document.getElementById('settlePreviewList');
     listEl.innerHTML = toAdd.map(r =>
       '<div class="settle-preview-item">' +
@@ -656,47 +634,14 @@ async function importSettle(event, platform){
         '<div class="settle-preview-amt">' + r.amt.toLocaleString('ko-KR') + '원</div>' +
       '</div>'
     ).join('');
-
     document.getElementById('settlePreview').classList.remove('hidden');
-
-    } else if(platform === 'gmarket'){
-      // ===== 지마켓 파싱 =====
-      // 송금번호 기준 중복제거, 송금완료만, 현재연도만
-      for(const file of files){
-        const rows = await readXlsxFile(file);
-        rows.forEach(row => {
-          const no = String(row['송금번호'] || '').trim();
-          if(!no || no === 'undefined') return;
-
-          const sendDate = String(row['송금일'] || '').trim();
-          if(!sendDate.startsWith(String(curYear))){ skippedEtc++; return; }
-
-          const status = String(row['송금상태'] || '').trim();
-          if(status !== '송금완료'){ skippedEtc++; return; }
-
-          const amtStr = String(row['송금액'] || '0').replace(/,/g,'');
-          const amt = parseInt(amtStr) || 0;
-          if(amt <= 0){ skippedEtc++; return; }
-
-          if(existingNos.has(no)){ skippedDup++; return; }
-          existingNos.add(no);
-
-          // 최근 송금일 추적
-          if(sendDate > lastSettleDate) lastSettleDate = sendDate;
-
-          const parts = sendDate.split('-');
-          const dateStr = parseInt(parts[1]) + '/' + parseInt(parts[2]);
-
-          toAdd.push({ orderNo: no, name: '', dateStr, amt, product: '지마켓 정산', platform });
-        });
-      }
-    }
 
   } catch(err){
     console.error(err);
     toast('파일을 읽을 수 없어요. 올바른 정산 파일인지 확인해주세요.');
   }
 }
+
 
 function confirmSettle(){
   if(!settlePending.length) return;
