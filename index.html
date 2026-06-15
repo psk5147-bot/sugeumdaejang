@@ -645,6 +645,9 @@ async function importSettle(event, platform){
 
 function confirmSettle(){
   if(!settlePending.length) return;
+  // 항상 미수금 탭에 추가 (안전장치)
+  tab = 'misugeum';
+  setTab('misugeum');
   const platform2 = settlePending[0].platform; const prefix = platform2 === 'naver' ? '[네이버]' : platform2 === 'coupang' ? '[쿠팡]' : '[지마켓]';
   const orderField = settlePending[0].platform === 'naver' ? 'naverOrderNo' : 'naverOrderNo';
 
