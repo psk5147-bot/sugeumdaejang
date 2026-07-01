@@ -448,8 +448,8 @@ function renderSuyik(){
     const m=parseInt((it.date||'').split('/')[0]);
     if(m<1||m>12) return;
     let amt=0;
-    if(it.isSplit&&it.splits&&it.splits.length>0){amt=it.splits.filter(sp=>sp.done===true).reduce((s,sp)=>s+Number(sp.amt),0);}
-    else if(it.done){amt=Number(it.amt);}
+    if(it.done){amt=Number(it.amt);}
+    else if(it.isSplit&&it.splits&&it.splits.length>0){amt=it.splits.filter(sp=>sp.done===true).reduce((s,sp)=>s+Number(sp.amt),0);}
     if(amt<=0) return;
     months[m].income+=amt;
     const co=it.company||it.desc||'';
@@ -462,8 +462,8 @@ function renderSuyik(){
     const m=parseInt((it.date||'').split('/')[0]);
     if(m<1||m>12) return;
     let amt=0;
-    if(it.isSplit&&it.splits&&it.splits.length>0){amt=it.splits.filter(sp=>sp.done===true).reduce((s,sp)=>s+Number(sp.amt),0);}
-    else if(it.done){amt=Number(it.amt);}
+    if(it.done){amt=Number(it.amt);}
+    else if(it.isSplit&&it.splits&&it.splits.length>0){amt=it.splits.filter(sp=>sp.done===true).reduce((s,sp)=>s+Number(sp.amt),0);}
     if(amt<=0) return;
     months[m].expense+=amt;
   });
