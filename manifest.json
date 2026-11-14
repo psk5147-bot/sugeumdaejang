@@ -1,6 +1,6 @@
 {
-  "name": "수금대장",
-  "short_name": "수금대장",
+  "name": "수금 관리",
+  "short_name": "수금 관리",
   "description": "화천이티씨 수금대장",
   "start_url": "/sugeumdaejang/",
   "display": "standalone",
