@@ -194,10 +194,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
 const _fbConfig={apiKey:"AIzaSyAxzmQDhFSu5sh7mgu37wdIzmwRt7ZnTi8",authDomain:"sugeumdaejang.firebaseapp.com",projectId:"sugeumdaejang",storageBucket:"sugeumdaejang.firebasestorage.app",messagingSenderId:"883862465831",appId:"1:883862465831:web:ed0d835f01669ec4aecd02"};
 if(!firebase.apps.length)firebase.initializeApp(_fbConfig);
 const _db=firebase.firestore();
+const _auth=firebase.auth();
+_auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 const _DOCP=new URLSearchParams(location.search).get('doc');
 const _DOCID=_DOCP||'2026';
 const _DOC=_db.collection('soogeum').doc(_DOCID);
@@ -261,9 +264,10 @@ window.startSync=function(cb){_DOC.onSnapshot((snap)=>{if(snap.exists){const d=s
   <div class="lock-card">
     <div class="lock-icon">🔐</div>
     <div class="lock-title">수금 관리</div>
-    <div class="lock-sub">비밀번호를 입력하세요</div>
-    <input class="lock-inp" type="password" id="lockInp" placeholder="••••••••••" onkeydown="if(event.key==='Enter')checkPw()">
-    <button class="lock-btn" onclick="checkPw()">확인</button>
+    <div class="lock-sub">이메일과 비밀번호로 로그인하세요<br>한 번 로그인하면 이 기기에서는 계속 유지돼요</div>
+    <input class="lock-inp" type="email" id="lockEmail" autocomplete="username" placeholder="이메일" style="letter-spacing:0;text-align:left" onkeydown="if(event.key==='Enter')document.getElementById('lockInp').focus()">
+    <input class="lock-inp" type="password" id="lockInp" autocomplete="current-password" placeholder="비밀번호" style="letter-spacing:0;text-align:left" onkeydown="if(event.key==='Enter')checkPw()">
+    <button class="lock-btn" id="lockBtn" onclick="checkPw()">로그인</button>
     <div class="lock-err" id="lockErr"></div>
   </div>
 </div>
@@ -280,6 +284,7 @@ window.startSync=function(cb){_DOC.onSnapshot((snap)=>{if(snap.exists){const d=s
             <button class="menu-it" onclick="toggleMenu();exportBackup()">백업 파일 저장</button>
             <label class="menu-it" style="display:block">복원 (파일)<input type="file" accept=".json" onchange="toggleMenu();importBackup(event)" style="display:none"></label>
             <button class="menu-it" onclick="toggleMenu();openBackups()">자동백업 목록</button>
+            <button class="menu-it" onclick="toggleMenu();logout()">로그아웃</button>
           </div>
         </div>
       </div>
@@ -604,11 +609,23 @@ load();
 </script>
 <script>
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
-const PW_KEY='soogeum_auth';
-const CORRECT_PW='moonh5143862#';
-function logout(){if(!confirm('로그아웃 하시겠어요?'))return;localStorage.removeItem(PW_KEY);document.getElementById('mainApp').style.display='none';document.getElementById('lockScreen').classList.remove('hidden');document.getElementById('lockInp').value='';document.getElementById('lockErr').textContent='';document.getElementById('lockInp').focus();}
-function checkPw(){const pw=document.getElementById('lockInp').value;if(pw===CORRECT_PW){localStorage.setItem(PW_KEY,btoa(CORRECT_PW));document.getElementById('lockScreen').classList.add('hidden');document.getElementById('mainApp').style.display='flex';load();}else{document.getElementById('lockErr').textContent='비밀번호가 틀렸어요 ❌';document.getElementById('lockInp').value='';document.getElementById('lockInp').focus();}}
-function initAuth(){document.getElementById('lockScreen').classList.add('hidden');document.getElementById('mainApp').style.display='flex';load();}
+let _appStarted=false;
+function showLogin(msg){document.getElementById('mainApp').style.display='none';document.getElementById('lockScreen').classList.remove('hidden');document.getElementById('lockErr').textContent=msg||'';}
+function logout(){if(!confirm('로그아웃 하시겠어요?\n(다시 들어오려면 이메일과 비밀번호가 필요해요)'))return;try{localStorage.removeItem(STORAGE_KEY);}catch(e){}_auth.signOut();}
+async function checkPw(){
+  const email=document.getElementById('lockEmail').value.trim(),pw=document.getElementById('lockInp').value,err=document.getElementById('lockErr'),btn=document.getElementById('lockBtn');
+  if(!email||!pw){err.textContent='이메일과 비밀번호를 입력해 주세요';return;}
+  btn.disabled=true;err.textContent='';
+  try{await _auth.signInWithEmailAndPassword(email,pw);}
+  catch(e){const net=e&&e.code==='auth/network-request-failed';err.textContent=net?'인터넷 연결을 확인해 주세요':'이메일 또는 비밀번호가 틀렸어요';document.getElementById('lockInp').value='';}
+  btn.disabled=false;
+}
+function initAuth(){
+  _auth.onAuthStateChanged(user=>{
+    if(user){document.getElementById('lockScreen').classList.add('hidden');document.getElementById('mainApp').style.display='flex';if(!_appStarted){_appStarted=true;load();}}
+    else{_appStarted=false;showLogin('');}
+  });
+}
 initAuth();
 </script>
 </body>
