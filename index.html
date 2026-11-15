@@ -292,6 +292,50 @@
   .sy-grid2 .sy-card{margin-top:0}
   .sy-grid2>.sy-card{display:flex;flex-direction:column}
   .sy-grid2 .sy-donut-wrap{flex:1;justify-content:center}
+
+  /* ===== 수익 탭: 다른 탭(미수금·지급금)과 같은 디자인으로 통일 ===== */
+  #suyikModal{background:var(--bg)}
+  .modal.sy-modal{background:var(--bg);max-width:none;padding:0;min-height:100vh}
+  .sy-modal .header{padding-bottom:0}
+  #suyikContent{padding:12px 20px 40px}
+  .sy-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+  .sy-stats .stat.main{grid-column:span 2}
+  .sy-stats .stat.main .stat-val{font-size:24px}
+  .sy-stats .stat-val small{font-size:12px;font-weight:500;color:var(--text2);margin-left:2px}
+  .sy-stats .stat-val.up{color:var(--green)}.sy-stats .stat-val.dn{color:var(--red)}
+  .sy-stat-sub{font-size:11px;color:var(--text2);margin-top:4px}
+  .sy-chips{padding:12px 0 10px;gap:6px}
+  .sy-chip{padding:5px 12px;font-size:12px;border:1px solid var(--border);background:transparent;color:var(--text2);font-weight:400}
+  .sy-chip.on{background:var(--bg3);color:var(--text);border-color:#555;font-weight:400}
+  .sy-toggle{color:var(--text2);margin:2px 0 4px;font-size:12px}
+  .sy-toggle input:checked+.sy-sw{background:#555}
+  .sy-sec{color:var(--text);font-size:14px;margin:18px 0 10px}
+  .sy-sec small,.sy-card-t small{color:var(--text3)}
+  .sy-card{border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .sy-card-t{color:var(--text);font-size:14px}
+  .sy-cat{border-top:1px solid var(--border)}
+  .sy-cat::before{display:none}
+  .sy-cat-name{color:var(--text)}.sy-cat-pct,.sy-cat-desc{color:var(--text3)}
+  .pos{color:var(--green)}.neg{color:var(--red)}
+  .sy-bar-row{color:var(--text2)}.sy-bar-row em{color:var(--text)}
+  .sy-bar{background:var(--bg3)}
+  .sy-dt1{fill:#aaa}.sy-dt2{fill:#1a1a1a}
+  .sy-legend{color:var(--text)}
+  .sy-hbar-top{color:var(--text2)}.sy-hbar-top b{color:var(--text)}.sy-hbar-top i{color:var(--text3)}
+  .sy-hbar.clk:hover{background:var(--bg3)}
+  .sy-hbar.clk.on{background:var(--bg3);box-shadow:inset 0 0 0 1.5px #555}
+  .sy-det-x{border:1px solid var(--border);color:var(--text2);font-weight:500;background:#fff}
+  .sy-det-sum{color:var(--text2)}.sy-det-sum b{color:var(--text)}
+  .sy-det-r{border-top:1px solid var(--border);color:var(--text)}.sy-det-r small{color:var(--text3)}
+  .sy-det-r b{color:var(--green)}
+  .sy-col.on{background:var(--bg3)}
+  .sy-val{color:var(--text2)}
+  .sy-pb{background:var(--green);opacity:.85}.sy-nb{background:var(--red);opacity:.7}
+  .sy-mlab{color:var(--text3)}.sy-mlab.now{color:var(--text)}
+  .sy-rn{background:#555}
+  .sy-mc-h b{color:var(--text)}.sy-mc-r{color:var(--text2)}
+  .sy-note{color:var(--text3)}
+  @media (max-width:760px){#suyikContent{padding:12px 20px 40px}.sy-stats{grid-template-columns:1fr 1fr}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
@@ -501,7 +545,14 @@ window.startSync=function(cb){_DOC.onSnapshot((snap)=>{if(snap.exists){const d=s
 </div>
 <div class="modal-overlay hidden" id="suyikModal">
   <div class="modal sy-modal">
-    <button class="back-btn" onclick="closeSuyik()">← 닫기</button>
+    <div class="header">
+      <div class="header-inner"><div class="app-title">수익 분석 2026</div><div class="header-date">화천이티씨</div></div>
+      <div class="tabs" style="padding:12px 0 0">
+        <button class="tab misugeum" onclick="closeSuyik();setTab('misugeum')">미수금</button>
+        <button class="tab jigeum" onclick="closeSuyik();setTab('jigeum')">지급금</button>
+        <button class="tab suyik active" onclick="renderSuyik()">수익</button>
+      </div>
+    </div>
     <div id="suyikContent"></div>
   </div>
 </div>
@@ -629,7 +680,7 @@ function toggle(i){data[tab][i].done=!data[tab][i].done;save();render();}
 function toggleSplitDone(itemIdx,splitIdx){const sp=data[tab][itemIdx].splits[splitIdx];sp.done=sp.done!==true;const total=Number(data[tab][itemIdx].amt);const paid=data[tab][itemIdx].splits.filter(s=>s.done===true).reduce((a,s)=>a+Number(s.amt),0);data[tab][itemIdx].done=paid>=total;save();render();}
 function del(i){if(!confirm('정말 삭제할까요?'))return;data[tab].splice(i,1);save();render();toast('삭제됐어요');}
 document.getElementById('inpDate').addEventListener('keydown',e=>{if(e.key==='Enter')addItem();});
-function openSuyik(){document.getElementById('suyikModal').classList.remove('hidden');renderSuyik();}
+function openSuyik(){const md=document.getElementById('suyikModal');md.classList.remove('hidden');md.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active',el.classList.contains('suyik')));md.scrollTop=0;renderSuyik();}
 function closeSuyik(){document.getElementById('suyikModal').classList.add('hidden');}
 var suyikMonth=0, suyikExcl=false, suyikChan='';
 function setSuyikChan(k){suyikChan=(suyikChan===k?'':k);renderSuyik();}
@@ -702,18 +753,17 @@ function renderSuyik(){
  let archive=[];try{archive=JSON.parse(localStorage.getItem(ARCHIVE_KEY)||'[]');}catch(e){}
  const pCls=n=>n>=0?'pos':'neg';
  let h='';
- /* 상단 바 */
- h+='<div class="sy-top"><div><div class="sy-eyebrow">화천이티씨</div><div class="sy-h1">수익 분석</div></div><div class="sy-year">'+appYear+'년</div></div>';
  /* 기간 선택 */
  h+='<div class="sy-chips"><button class="sy-chip'+(sel===0?' on':'')+'" onclick="setSuyikMonth(0)">연간</button>'+mList.map(m=>'<button class="sy-chip'+(sel===m?' on':'')+'" onclick="setSuyikMonth('+m+')">'+m+'월</button>').join('')+'</div>';
- /* 히어로 */
+ /* 요약 카드 (다른 탭과 같은 stat 카드) */
  const pn=(cat.personal.inc||cat.personal.exp);
- h+='<div class="sy-hero"><div class="sy-hero-l"><div class="sy-hero-label">'+(sel?sel+'월':appYear+'년 연간')+' 순수익</div><div class="sy-hero-num '+pCls(profit)+'">'+syWon(profit)+'</div>'
-  +'<div class="sy-hero-sub"><span>수입 <b>'+syWon(inc)+'</b></span><span>지출 <b>'+syWon(exp)+'</b></span></div></div>'
-  +'<div class="sy-hero-r"><div class="sy-kpi"><span>마진율</span><b>'+margin.toFixed(1)+'%</b></div>'
-  +(sel?'':'<div class="sy-kpi"><span>월평균</span><b>'+syK(avgP)+'원</b></div>'+(bestM.m?'<div class="sy-kpi"><span>최고 '+bestM.m+'월</span><b>'+syK(bestM.p)+'원</b></div>':''))
-  +(sel&&sel>1&&mon[sel-1]&&(mon[sel-1].inc||mon[sel-1].exp)?(function(){const d=profit-prof(sel-1);return '<div class="sy-kpi"><span>전월 대비</span><b class="'+(d>=0?'up':'dn')+'">'+(d>=0?'▲ ':'▼ ')+syK(Math.abs(d))+'원</b></div>';})():'')
-  +'</div></div>';
+ const stat=(l,v,c,cls)=>'<div class="stat'+(cls?' '+cls:'')+'"><div class="stat-label">'+l+'</div><div class="stat-val '+c+'">'+v+'</div></div>';
+ h+='<div class="sy-stats">'+stat((sel?sel+'월':appYear+'년 연간')+' 순수익',syWon(profit),profit>=0?'green':'red','main')
+  +stat('수입',syWon(inc),'green')+stat('지출',syWon(exp),'red')
+  +stat('마진율',margin.toFixed(1)+'%','neutral')
+  +(sel?'':stat('월평균',syK(avgP)+'<small>원</small>','neutral')+(bestM.m?stat('최고 '+bestM.m+'월',syK(bestM.p)+'<small>원</small>','neutral'):''))
+  +(sel&&sel>1&&mon[sel-1]&&(mon[sel-1].inc||mon[sel-1].exp)?(function(){const d=profit-prof(sel-1);return stat('전월 대비',(d>=0?'▲ ':'▼ ')+syK(Math.abs(d))+'<small>원</small>',d>=0?'up':'dn');})():'')
+  +'</div>';
  /* 개인 제외 토글 */
  h+='<label class="sy-toggle"><input type="checkbox" '+(suyikExcl?'checked':'')+' onchange="toggleSuyikExcl()"><span class="sy-sw"></span><span>개인·정산(더치페이, 대여금 등) 제외하고 보기</span></label>';
  /* 카테고리 */
